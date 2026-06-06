@@ -1,0 +1,1691 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Feed Manager · Floristería Sarai</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Outfit:wght@200;300;400;500;600&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════════
+   DESIGN SYSTEM — mismo que web Floristería Sarai
+══════════════════════════════════════════════════ */
+:root{
+  /* Background — cálido oscuro como la web de Sarai */
+  --bg:#1A1612;
+  --bg2:#201C17;
+  --bg3:#26211B;
+  --card:#2C261F;
+  --line:rgba(237,232,223,.07);
+  --line2:rgba(237,232,223,.12);
+  --line3:rgba(237,232,223,.20);
+  /* Gold — idéntico a la web */
+  --gold:#C9A84C;
+  --gold2:#E8C97A;
+  --gold3:#F5E0A0;
+  --goldL:rgba(201,168,76,.10);
+  --goldM:rgba(201,168,76,.20);
+  --goldB:rgba(201,168,76,.32);
+  --grad-gold:linear-gradient(135deg,#F5E0A0 0%,#C9A84C 55%,#A07830 100%);
+  /* Glass */
+  --glass:rgba(237,232,223,.03);
+  --glass2:rgba(237,232,223,.055);
+  --glass-b:rgba(237,232,223,.09);
+  --glass-b2:rgba(237,232,223,.15);
+  /* Status colors */
+  --green:#4ADE80;
+  --greenL:rgba(74,222,128,.10);
+  --greenB:rgba(74,222,128,.28);
+  --rose:#FB7185;
+  --roseL:rgba(251,113,133,.10);
+  --roseB:rgba(251,113,133,.28);
+  --amber:#FCD34D;
+  --amberL:rgba(252,211,77,.10);
+  /* Text */
+  --t1:#EDE8DF;
+  --t2:#B8B09A;
+  --t3:#6B6255;
+  --t4:#3A342C;
+  /* Easing */
+  --eo:cubic-bezier(0.23,1,0.32,1);
+  --spring:cubic-bezier(0.34,1.56,0.64,1);
+  /* Shadows */
+  --sh:0 8px 40px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.04);
+  --sh-lg:0 24px 80px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.06);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{font-size:16px}
+body{font-family:'Outfit',sans-serif;font-weight:300;background:var(--bg);color:var(--t1);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased;cursor:none}
+button,input,textarea,select{font-family:'Outfit',sans-serif;cursor:none}
+img{display:block}
+::selection{background:var(--gold);color:var(--bg)}
+
+/* GRAIN — igual que la web de Sarai */
+body::before{content:'';position:fixed;inset:0;z-index:9990;pointer-events:none;opacity:.025;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+/* CURSOR */
+#cur-t{position:fixed;top:0;left:0;z-index:9999;width:38px;height:38px;border:1px solid var(--goldB);border-radius:50%;pointer-events:none;transform:translate(-50%,-50%);transition:width 260ms var(--eo),height 260ms var(--eo),border-color 260ms,background 260ms}
+#cur-d{position:fixed;top:0;left:0;z-index:9999;width:4px;height:4px;background:var(--gold);border-radius:50%;pointer-events:none;transform:translate(-50%,-50%);box-shadow:0 0 8px var(--gold)}
+body.ch #cur-t{width:54px;height:54px;border-color:var(--gold);background:var(--goldL)}
+body.cc #cur-t{transform:translate(-50%,-50%) scale(.88)}
+
+/* SCREENS */
+.scr{display:none;min-height:100vh;flex-direction:column}
+.scr.on{display:flex}
+
+/* ══════════════════════
+   ANIMATIONS
+══════════════════════ */
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes cardIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ══════════════════════
+   NAV — estilo web Sarai
+══════════════════════ */
+.top-nav{
+  height:3.75rem;display:flex;align-items:center;justify-content:space-between;
+  padding:0 2rem;flex-shrink:0;
+  background:rgba(26,22,18,.85);border-bottom:1px solid var(--line);
+  backdrop-filter:blur(24px);position:sticky;top:0;z-index:100;
+}
+.nav-logo{
+  font-family:'Cormorant',serif;font-size:1.05rem;font-style:italic;
+  color:var(--gold);letter-spacing:.02em;display:flex;align-items:center;gap:.5rem;
+}
+.nav-logo::before{content:'✦';font-style:normal;font-size:.7rem;opacity:.6}
+.nav-logo small{font-style:normal;font-family:'DM Mono',monospace;font-size:.5rem;color:var(--t3);letter-spacing:.2em;text-transform:uppercase;margin-left:.4rem}
+.nav-tabs{display:flex;gap:.2rem}
+.nav-tab{font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:var(--t3);padding:.44rem .9rem;border-radius:4px;background:none;border:1px solid transparent;cursor:none;transition:all 160ms var(--eo)}
+.nav-tab.on{color:var(--gold);background:var(--goldL);border-color:var(--goldB)}
+.nav-tab:hover:not(.on){color:var(--t2);border-color:var(--line2)}
+.nav-btn{font-family:'DM Mono',monospace;font-size:.56rem;letter-spacing:.14em;text-transform:uppercase;color:var(--t3);background:none;border:1px solid var(--line2);border-radius:4px;cursor:none;padding:.38rem .8rem;transition:all 140ms}
+.nav-btn:hover{color:var(--t2);border-color:var(--line3)}
+
+/* ══════════════════════
+   LOGIN
+══════════════════════ */
+#sc-login{
+  background:var(--bg);align-items:center;justify-content:center;padding:2rem;
+  background-image:
+    radial-gradient(ellipse at 15% 50%,rgba(201,168,76,.05) 0%,transparent 55%),
+    radial-gradient(ellipse at 85% 20%,rgba(201,168,76,.03) 0%,transparent 50%);
+}
+.login-wrap{width:100%;max-width:380px;animation:fadeUp 500ms var(--eo) both}
+.login-eyebrow{font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);margin-bottom:2.5rem;display:flex;align-items:center;gap:.75rem}
+.login-eyebrow::before{content:'';width:1.75rem;height:1px;background:var(--goldB);display:block}
+.login-h{font-family:'Cormorant',serif;font-size:clamp(2.8rem,9vw,4rem);font-weight:300;line-height:.9;letter-spacing:-.03em;color:var(--t1);margin-bottom:.6rem}
+.login-h em{font-style:italic;color:var(--gold)}
+.login-sub{font-size:.82rem;color:var(--t3);margin-bottom:2rem;line-height:1.75;font-weight:300}
+.role-pills{display:flex;border:1px solid var(--line2);border-radius:5px;overflow:hidden;margin-bottom:1.5rem;background:var(--glass)}
+.rpill{flex:1;padding:.62rem;text-align:center;font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:var(--t3);background:none;border:none;cursor:none;transition:all 200ms var(--eo)}
+.rpill.on{background:var(--goldL);color:var(--gold)}
+.finp{width:100%;background:var(--glass2);border:1px solid var(--line2);color:var(--t1);font-size:.9rem;font-weight:300;padding:.85rem 1.1rem;margin-bottom:.55rem;outline:none;border-radius:5px;transition:border-color 180ms,background 180ms}
+.finp:focus{border-color:var(--goldB);background:var(--goldM)}
+.finp::placeholder{color:var(--t4)}
+.login-btn{width:100%;background:var(--grad-gold);color:var(--bg);border:none;font-family:'DM Mono',monospace;font-size:.65rem;letter-spacing:.24em;text-transform:uppercase;padding:1rem;border-radius:5px;cursor:none;margin-top:.5rem;transition:all 200ms var(--eo)}
+.login-btn:hover{filter:brightness(1.08);transform:translateY(-1px);box-shadow:0 4px 20px rgba(201,168,76,.3)}
+.login-btn:active{transform:scale(.98)}
+.login-err{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--rose);margin-top:.75rem;display:none;text-align:center;letter-spacing:.06em}
+.login-demo{margin-top:1.75rem;padding:1rem 1.25rem;background:var(--goldL);border:1px solid var(--goldB);border-radius:6px}
+.login-demo-label{font-family:'DM Mono',monospace;font-size:.56rem;letter-spacing:.24em;text-transform:uppercase;color:var(--gold);margin-bottom:.55rem}
+.login-demo-row{font-size:.78rem;color:var(--t3);line-height:1.9}
+.login-demo-row b{color:var(--t2);font-weight:400}
+.login-reg-row{text-align:center;margin-top:1.25rem;font-size:.78rem;color:var(--t3)}
+.login-reg-btn{color:var(--gold);background:none;border:none;border-bottom:1px solid var(--goldB);padding-bottom:1px;cursor:none;font-size:.78rem;font-family:'Outfit',sans-serif;transition:color 140ms}
+
+/* ══════════════════════
+   REGISTER
+══════════════════════ */
+.reg-overlay{position:fixed;inset:0;z-index:600;background:rgba(26,22,18,.97);backdrop-filter:blur(20px);display:none;align-items:center;justify-content:center;padding:1.5rem;overflow-y:auto}
+.reg-overlay.on{display:flex}
+.reg-box{background:var(--bg2);border:1px solid var(--glass-b);border-radius:12px;padding:2.25rem 2rem;width:100%;max-width:480px;box-shadow:var(--sh-lg);animation:fadeUp 280ms var(--eo) both}
+.reg-eyebrow{font-family:'DM Mono',monospace;font-size:.56rem;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);margin-bottom:.75rem;display:flex;align-items:center;gap:.6rem}
+.reg-eyebrow::before{content:'';width:1.2rem;height:1px;background:var(--goldB);display:block}
+.reg-title{font-family:'Cormorant',serif;font-size:2.2rem;font-style:italic;font-weight:300;color:var(--t1);margin-bottom:.3rem;letter-spacing:-.02em}
+.reg-sub{font-size:.8rem;color:var(--t3);margin-bottom:1.5rem;line-height:1.7}
+.reg-grid2{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+.reg-inp{width:100%;background:var(--glass2);border:1px solid var(--line2);color:var(--t1);font-size:.86rem;font-weight:300;padding:.78rem 1rem;outline:none;border-radius:5px;transition:border-color 160ms,background 160ms;margin-bottom:.45rem}
+.reg-inp:focus{border-color:var(--goldB);background:var(--goldL)}
+.reg-inp::placeholder{color:var(--t4)}
+.reg-select{width:100%;background:var(--bg2);border:1px solid var(--line2);color:var(--t4);font-size:.86rem;font-weight:300;padding:.78rem 1rem;outline:none;border-radius:5px;margin-bottom:.45rem;appearance:none;cursor:none;transition:border-color 160ms}
+.reg-select:focus{border-color:var(--goldB)}
+.reg-select.ok{color:var(--t1)}
+.reg-submit{width:100%;background:var(--grad-gold);color:var(--bg);border:none;font-family:'DM Mono',monospace;font-size:.65rem;letter-spacing:.22em;text-transform:uppercase;padding:.95rem;border-radius:5px;cursor:none;margin-top:.5rem;transition:all 200ms var(--eo)}
+.reg-submit:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.reg-err{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--rose);margin-top:.5rem;display:none;text-align:center}
+.reg-back{font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:var(--t3);background:none;border:none;cursor:none;margin-bottom:1.5rem;display:flex;align-items:center;gap:.5rem;padding:0;transition:color 140ms}
+.reg-back:hover{color:var(--t1)}
+
+/* ══════════════════════
+   ADMIN BODY
+══════════════════════ */
+.a-body{flex:1;padding:2rem;max-width:1000px;margin:0 auto;width:100%}
+
+/* Client bar */
+.client-bar{display:flex;align-items:center;gap:.85rem;flex-wrap:wrap;background:var(--glass2);border:1px solid var(--glass-b);backdrop-filter:blur(16px);padding:1rem 1.4rem;border-radius:10px;margin-bottom:1.75rem;box-shadow:var(--sh)}
+.client-bar-label{font-family:'DM Mono',monospace;font-size:.56rem;letter-spacing:.2em;text-transform:uppercase;color:var(--t3);flex-shrink:0}
+.client-bar-sep{width:1px;height:1.1rem;background:var(--line2);flex-shrink:0}
+.client-select{background:transparent;border:none;color:var(--t1);font-family:'Cormorant',serif;font-size:1.15rem;font-style:italic;outline:none;cursor:none;appearance:none;flex:1}
+.client-select option{background:var(--bg2);color:var(--t1)}
+.btn-gold-sm{font-family:'DM Mono',monospace;font-size:.56rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);background:var(--goldL);border:1px solid var(--goldB);padding:.4rem .9rem;border-radius:4px;cursor:none;transition:all 140ms;flex-shrink:0}
+.btn-gold-sm:hover{background:var(--goldM)}
+
+/* Media type */
+.media-type-row{display:flex;gap:.5rem;margin-bottom:1rem}
+.mtype-btn{flex:1;padding:.58rem;border-radius:4px;cursor:none;font-family:'DM Mono',monospace;font-size:.56rem;letter-spacing:.12em;text-transform:uppercase;border:1px solid var(--line2);background:var(--glass);color:var(--t3);transition:all 160ms var(--eo)}
+.mtype-btn.on{border-color:var(--goldB);background:var(--goldL);color:var(--gold)}
+.mtype-btn:hover:not(.on){color:var(--t2);border-color:var(--line3)}
+
+/* Upload zone */
+.upload-zone{border:1.5px dashed var(--line3);border-radius:10px;padding:2.25rem 1.5rem;text-align:center;cursor:none;position:relative;margin-bottom:1rem;transition:all 220ms var(--eo);background:var(--glass)}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--goldB);background:var(--goldL)}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:none;width:100%}
+.upload-zone-icon{font-family:'DM Mono',monospace;font-size:.64rem;letter-spacing:.24em;text-transform:uppercase;color:var(--t3);margin-bottom:.4rem}
+.upload-zone-sub{font-size:.76rem;color:var(--t4)}
+
+/* AI btn */
+.ai-btn{width:100%;margin-bottom:1.75rem;background:var(--goldL);border:1px solid var(--goldB);color:var(--gold);font-family:'DM Mono',monospace;font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;padding:.85rem;border-radius:8px;cursor:none;display:flex;align-items:center;justify-content:center;gap:.65rem;transition:all 160ms var(--eo)}
+.ai-btn:hover:not(:disabled){background:var(--goldM)}
+.ai-btn:disabled{opacity:.35;cursor:not-allowed}
+.ai-btn svg{width:1rem;height:1rem}
+.ai-btn.loading svg{animation:spin 1s linear infinite}
+
+/* Queue */
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:.9rem}
+.section-title{font-family:'Cormorant',serif;font-size:1.2rem;font-style:italic;color:var(--t1)}
+.section-meta{font-family:'DM Mono',monospace;font-size:.56rem;color:var(--t3);letter-spacing:.1em}
+.q-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(184px,1fr));gap:.85rem;margin-bottom:1.75rem}
+.q-empty{grid-column:1/-1;border:1.5px dashed var(--line);border-radius:10px;padding:3rem;text-align:center;color:var(--t3);font-size:.82rem;font-weight:300}
+.qcard{background:var(--glass2);border:1px solid var(--line);border-radius:10px;overflow:hidden;animation:cardIn 300ms var(--eo) both;transition:border-color 200ms,transform 200ms var(--eo)}
+.qcard:hover{border-color:var(--line2);transform:translateY(-2px)}
+.qcard-img,.qcard-video{aspect-ratio:1;overflow:hidden;position:relative;background:var(--bg3)}
+.qcard-img img,.qcard-video video{width:100%;height:100%;object-fit:cover;transition:transform 300ms var(--eo)}
+.qcard:hover .qcard-img img{transform:scale(1.04)}
+.qcard-color-bar{position:absolute;bottom:0;left:0;right:0;height:2px;opacity:.8}
+.qcard-tone-pill{position:absolute;top:.55rem;right:.55rem;font-family:'DM Mono',monospace;font-size:.5rem;letter-spacing:.08em;padding:.18rem .45rem;border-radius:20px;backdrop-filter:blur(8px)}
+.tone-warm{background:rgba(201,168,76,.22);color:var(--gold)}
+.tone-cool{background:rgba(96,165,250,.22);color:#93C5FD}
+.tone-neutral{background:rgba(167,243,208,.18);color:#6EE7B7}
+.qcard-video-badge{position:absolute;top:.55rem;left:.55rem;background:rgba(26,22,18,.88);border:1px solid var(--line2);font-family:'DM Mono',monospace;font-size:.48rem;padding:.18rem .45rem;border-radius:4px;color:var(--t2)}
+.qcard-body{padding:.8rem}
+.qcard-caption{width:100%;background:transparent;border:none;border-bottom:1px solid var(--line);color:var(--t1);font-size:.7rem;font-weight:300;line-height:1.55;resize:none;outline:none;padding-bottom:.4rem;margin-bottom:.6rem;min-height:2.4rem}
+.qcard-caption::placeholder{color:var(--t4)}
+.qcard-date{width:100%;background:transparent;border:none;border-bottom:1px solid var(--line);color:var(--t2);font-family:'DM Mono',monospace;font-size:.56rem;padding:.32rem 0;outline:none;margin-bottom:.65rem;transition:border-color 140ms}
+.qcard-date:focus{border-color:var(--goldB)}
+.qcard-footer{display:flex;gap:.38rem;align-items:center}
+.qcard-status{flex:1;font-family:'DM Mono',monospace;font-size:.5rem;letter-spacing:.08em;text-transform:uppercase;padding:.26rem .45rem;border-radius:4px;text-align:center}
+.s-pending{background:var(--amberL);color:var(--amber);border:1px solid rgba(252,211,77,.25)}
+.s-approved{background:var(--greenL);color:var(--green);border:1px solid var(--greenB)}
+.s-published{background:rgba(147,51,234,.12);color:#C084FC;border:1px solid rgba(147,51,234,.25)}
+.s-changes{background:var(--roseL);color:var(--rose);border:1px solid var(--roseB)}
+.qcard-del{background:transparent;border:1px solid var(--line);color:var(--t3);padding:.26rem .5rem;font-size:.7rem;border-radius:4px;cursor:none;transition:all 140ms}
+.qcard-del:hover{border-color:var(--roseB);color:var(--rose)}
+.qcard-pub-btn{font-family:'DM Mono',monospace;font-size:.5rem;letter-spacing:.08em;background:var(--greenL);border:1px solid var(--greenB);color:var(--green);padding:.26rem .5rem;border-radius:4px;cursor:none;transition:all 140ms;white-space:nowrap}
+.qcard-pub-btn:hover{background:var(--green);color:var(--bg)}
+.qcard-changes{margin-top:.5rem;padding:.42rem .55rem;background:var(--roseL);border:1px solid var(--roseB);border-radius:4px;font-size:.62rem;color:var(--rose);line-height:1.5}
+.send-wrap{margin-top:1.75rem;padding-top:1.75rem;border-top:1px solid var(--line)}
+.btn-primary{width:100%;background:var(--grad-gold);color:var(--bg);border:none;font-family:'DM Mono',monospace;font-size:.65rem;letter-spacing:.24em;text-transform:uppercase;padding:1rem;border-radius:8px;cursor:none;transition:all 200ms var(--eo);margin-bottom:.55rem}
+.btn-primary:hover{filter:brightness(1.08);transform:translateY(-1px);box-shadow:0 4px 20px rgba(201,168,76,.3)}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+.send-note{font-family:'DM Mono',monospace;font-size:.56rem;color:var(--t3);text-align:center;line-height:1.7;letter-spacing:.04em}
+
+/* Calendar */
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.4rem}
+.cal-month{font-family:'Cormorant',serif;font-size:1.6rem;font-style:italic;color:var(--t1)}
+.cal-nav-btns{display:flex;gap:.4rem}
+.cal-nav-btn{background:var(--glass2);border:1px solid var(--glass-b);color:var(--t2);padding:.38rem .75rem;border-radius:4px;cursor:none;font-size:.85rem;transition:all 140ms}
+.cal-nav-btn:hover{border-color:var(--goldB);color:var(--gold)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:.35rem;margin-bottom:1.4rem}
+.cal-dow{font-family:'DM Mono',monospace;font-size:.52rem;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);text-align:center;padding:.4rem 0}
+.cal-day{aspect-ratio:1;border:1px solid var(--line);border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:none;transition:all 160ms var(--eo);position:relative;background:var(--glass);font-size:.78rem;color:var(--t2)}
+.cal-day:hover{border-color:var(--goldB);background:var(--goldL);color:var(--gold)}
+.cal-day.today{border-color:var(--goldB);color:var(--gold)}
+.cal-day.has-posts{padding:0;overflow:hidden;border-color:var(--goldB)}
+.cal-day.empty{opacity:.18;cursor:not-allowed;pointer-events:none}
+/* ── CALENDAR WITH IMAGES ── */
+.cal-day-inner{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;width:100%;height:100%;position:relative;padding-bottom:.3rem}
+.cal-day-num{font-size:.7rem;font-weight:400;color:var(--t2);z-index:2;position:relative;line-height:1;text-shadow:0 1px 3px rgba(0,0,0,.8)}
+.cal-day-thumb{position:absolute;inset:0;border-radius:5px;overflow:hidden}
+.cal-day-thumb img{width:100%;height:100%;object-fit:cover;opacity:.82;transition:opacity 200ms;filter:brightness(1.1) saturate(1.15)}
+.cal-day:hover .cal-day-thumb img{opacity:1;filter:brightness(1.2) saturate(1.2)}
+.cal-day.today .cal-day-num{color:var(--gold);font-weight:600}
+/* Client calendar tab */
+.c-cal-wrap{background:var(--glass2);border:1px solid var(--glass-b);border-radius:12px;padding:1.4rem;margin-bottom:1.75rem;box-shadow:var(--sh)}
+.c-cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.c-cal-title{font-family:'Cormorant',serif;font-size:1.1rem;font-style:italic;color:var(--t1)}
+.c-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:.3rem;margin-bottom:.5rem}
+.c-cal-dow{font-family:'DM Mono',monospace;font-size:.5rem;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);text-align:center;padding:.3rem 0}
+.c-cal-note{font-family:'DM Mono',monospace;font-size:.56rem;color:var(--t3);text-align:center;letter-spacing:.06em;margin-top:.4rem}
+
+.sched-list{display:flex;flex-direction:column;gap:.6rem}
+.sched-item{background:var(--glass2);border:1px solid var(--glass-b);border-radius:8px;padding:.85rem 1rem;display:flex;align-items:center;gap:.85rem;transition:border-color 160ms}
+.sched-item:hover{border-color:var(--line2)}
+.sched-thumb{width:3rem;height:3rem;border-radius:6px;object-fit:cover;flex-shrink:0}
+.sched-info{flex:1;min-width:0}
+.sched-date{font-family:'DM Mono',monospace;font-size:.56rem;color:var(--gold);letter-spacing:.1em;margin-bottom:.2rem}
+.sched-cap{font-size:.76rem;color:var(--t1);font-weight:300;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sched-pub-btn{font-family:'DM Mono',monospace;font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;background:var(--greenL);border:1px solid var(--greenB);color:var(--green);padding:.32rem .7rem;border-radius:4px;cursor:none;transition:all 140ms;flex-shrink:0}
+.sched-pub-btn:hover{background:var(--green);color:var(--bg)}
+.sched-pub-btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* Meta API */
+.meta-section{display:flex;flex-direction:column;gap:1.1rem}
+.panel-card{background:var(--glass2);border:1px solid var(--glass-b);border-radius:12px;padding:1.6rem;box-shadow:var(--sh)}
+.panel-card-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.panel-title{font-family:'Cormorant',serif;font-size:1.15rem;font-style:italic;color:var(--t1)}
+.status-pill{font-family:'DM Mono',monospace;font-size:.52rem;letter-spacing:.14em;text-transform:uppercase;padding:.26rem .7rem;border-radius:20px}
+.status-pill.pending{background:var(--amberL);color:var(--amber);border:1px solid rgba(252,211,77,.25)}
+.status-pill.connected{background:var(--greenL);color:var(--green);border:1px solid var(--greenB)}
+.panel-note{font-size:.8rem;color:var(--t3);line-height:1.75;margin-bottom:1.25rem}
+.meta-steps{display:flex;flex-direction:column;gap:.45rem;margin-bottom:1.5rem}
+.meta-step{display:flex;align-items:flex-start;gap:.85rem;padding:.82rem 1rem;background:var(--bg2);border:1px solid var(--line);border-radius:7px}
+.meta-step-n{width:1.5rem;height:1.5rem;border-radius:50%;flex-shrink:0;border:1px solid var(--line2);display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:.56rem;color:var(--t3);margin-top:.06rem}
+.meta-step-n.done{background:var(--green);border-color:var(--green);color:var(--bg)}
+.meta-step-txt{font-size:.78rem;color:var(--t3);line-height:1.55;flex:1}
+.meta-step.done .meta-step-txt{color:var(--t2)}
+.meta-inp{width:100%;background:var(--bg2);border:1px solid var(--line);color:var(--t1);font-size:.84rem;font-weight:300;padding:.76rem 1rem;outline:none;border-radius:5px;margin-bottom:.45rem;transition:border-color 140ms}
+.meta-inp:focus{border-color:var(--goldB)}
+.meta-inp::placeholder{color:var(--t4)}
+.btn-gold-full{width:100%;background:var(--goldL);border:1px solid var(--goldB);color:var(--gold);font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;padding:.72rem;border-radius:5px;cursor:none;transition:all 160ms;margin-bottom:.45rem}
+.btn-gold-full:hover{background:var(--gold);color:var(--bg)}
+.btn-green-full{width:100%;background:var(--greenL);border:1px solid var(--greenB);color:var(--green);font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;padding:.72rem;border-radius:5px;cursor:none;transition:all 160ms}
+.btn-green-full:hover:not(:disabled){background:var(--green);color:var(--bg)}
+.btn-green-full:disabled{opacity:.4;cursor:not-allowed}
+.info-banner{border-radius:8px;padding:1rem 1.15rem;margin-bottom:.5rem}
+.info-banner-title{font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;margin-bottom:.45rem}
+.info-banner-note{font-size:.78rem;color:var(--t3);line-height:1.65}
+.info-banner-note a{text-decoration:none}
+.info-banner.blue{background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.2)}
+.info-banner.blue .info-banner-title{color:#93C5FD}
+.info-banner.blue .info-banner-note a{color:#93C5FD}
+.info-banner.purple{background:rgba(139,92,246,.07);border:1px solid rgba(139,92,246,.2)}
+.info-banner.purple .info-banner-title{color:#C4B5FD}
+.info-banner.purple .info-banner-note a{color:#C4B5FD}
+.toggle-wrap{display:flex;align-items:center;justify-content:space-between;background:var(--glass2);border:1px solid var(--glass-b);border-radius:8px;padding:1rem 1.3rem}
+.toggle-label{font-size:.84rem;color:var(--t1)}
+.toggle-sub{font-size:.7rem;color:var(--t3);margin-top:.18rem}
+.toggle-sw{width:2.75rem;height:1.5rem;border-radius:9999px;background:var(--line2);cursor:none;position:relative;transition:background 200ms var(--eo);flex-shrink:0;border:none}
+.toggle-sw.on{background:var(--green)}
+.toggle-sw::after{content:'';position:absolute;top:.2rem;left:.2rem;width:1.1rem;height:1.1rem;border-radius:50%;background:#fff;transition:transform 200ms var(--spring)}
+.toggle-sw.on::after{transform:translateX(1.25rem)}
+.pub-log{background:var(--bg2);border:1px solid var(--line);border-radius:7px;overflow:hidden;max-height:200px;overflow-y:auto}
+.pub-log-empty{padding:1.5rem;text-align:center;color:var(--t4);font-size:.78rem}
+.log-entry{padding:.6rem 1rem;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:.75rem;font-size:.72rem}
+.log-entry:last-child{border-bottom:none}
+.log-dot{width:.42rem;height:.42rem;border-radius:50%;flex-shrink:0}
+.log-ok{background:var(--green)}.log-err{background:var(--rose)}.log-info{background:var(--amber)}
+.log-msg{flex:1;color:var(--t2)}
+.log-time{font-family:'DM Mono',monospace;font-size:.54rem;color:var(--t3)}
+
+/* Analytics */
+.an-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.75rem;margin-bottom:1.5rem}
+@media(min-width:640px){.an-grid{grid-template-columns:repeat(4,1fr)}}
+.an-card{background:var(--glass2);border:1px solid var(--glass-b);border-radius:10px;padding:1.25rem;text-align:center;transition:border-color 200ms}
+.an-card:hover{border-color:var(--goldB)}
+.an-n{font-family:'Cormorant',serif;font-size:2.2rem;font-weight:300;color:var(--gold);line-height:1;margin-bottom:.35rem}
+.an-l{font-family:'DM Mono',monospace;font-size:.54rem;letter-spacing:.14em;text-transform:uppercase;color:var(--t3)}
+
+/* Modals */
+.nc-overlay{position:fixed;inset:0;z-index:500;background:rgba(26,22,18,.92);backdrop-filter:blur(16px);display:flex;align-items:center;justify-content:center;padding:1.5rem;opacity:0;pointer-events:none;transition:opacity 200ms}
+.nc-overlay.on{opacity:1;pointer-events:all}
+.nc-box{background:var(--bg2);border:1px solid var(--glass-b);border-radius:12px;padding:1.85rem;width:100%;max-width:360px;box-shadow:var(--sh-lg);transform:scale(.94);transition:transform 220ms var(--eo)}
+.nc-overlay.on .nc-box{transform:scale(1)}
+.nc-title{font-family:'Cormorant',serif;font-size:1.35rem;font-style:italic;color:var(--t1);margin-bottom:1.25rem}
+.nc-inp{width:100%;background:var(--glass2);border:1px solid var(--line2);color:var(--t1);font-size:.84rem;font-weight:300;padding:.72rem .9rem;outline:none;border-radius:5px;margin-bottom:.45rem;transition:border-color 140ms}
+.nc-inp:focus{border-color:var(--goldB)}
+.nc-inp::placeholder{color:var(--t4)}
+.nc-submit{width:100%;background:var(--grad-gold);color:var(--bg);border:none;font-family:'DM Mono',monospace;font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;padding:.85rem;border-radius:5px;cursor:none;margin-top:.4rem;transition:all 140ms}
+.nc-submit:hover{filter:brightness(1.08)}
+.nc-cancel{width:100%;background:none;border:none;color:var(--t3);font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;font-family:'DM Mono',monospace;padding:.72rem;cursor:none;margin-top:.25rem}
+
+/* Pub overlay */
+.pub-overlay{position:fixed;inset:0;z-index:800;background:rgba(26,22,18,.88);backdrop-filter:blur(16px);display:none;align-items:center;justify-content:center}
+.pub-overlay.on{display:flex}
+.pub-box{background:var(--glass2);border:1px solid var(--glass-b2);border-radius:12px;padding:2.5rem;text-align:center;max-width:320px;width:100%;box-shadow:var(--sh-lg)}
+.pub-spinner{width:2.75rem;height:2.75rem;border:2px solid var(--goldL);border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 1.25rem}
+.pub-title{font-family:'Cormorant',serif;font-size:1.25rem;font-style:italic;color:var(--gold);margin-bottom:.5rem}
+.pub-sub{font-size:.76rem;color:var(--t3);line-height:1.6}
+
+/* ══════════════════════════════════════════
+   CLIENT VIEW — aesthetic, warm dark
+   + PHONE con feed reordenable
+══════════════════════════════════════════ */
+.c-body{flex:1;padding:2rem;width:100%;max-width:1120px;margin:0 auto}
+.c-layout{display:flex;gap:2.5rem;align-items:flex-start}
+.c-col-phone{flex:0 0 320px;position:sticky;top:5rem}
+.c-col-content{flex:1;min-width:0}
+@media(max-width:920px){.c-layout{flex-direction:column}.c-col-phone{width:100%;position:static;display:flex;justify-content:center;flex:none}.c-col-content{width:100%}}
+
+/* Header bar */
+.c-profile-bar{
+  display:flex;align-items:center;gap:.9rem;
+  padding:.9rem 1.15rem;
+  background:var(--glass2);border:1px solid var(--glass-b);
+  border-radius:10px;margin-bottom:1.75rem;
+  box-shadow:var(--sh);
+}
+.c-av{width:2.75rem;height:2.75rem;border-radius:50%;background:linear-gradient(135deg,#2D5016,#4A7A28);border:1px solid var(--goldB);display:flex;align-items:center;justify-content:center;font-family:'Cormorant',serif;font-size:.9rem;color:#fff;flex-shrink:0;font-weight:300}
+.c-handle{font-family:'DM Mono',monospace;font-size:.66rem;color:var(--t1);letter-spacing:.04em}
+.c-handle-note{font-size:.7rem;color:var(--t3);margin-top:.12rem}
+
+/* ── AESTHETIC HARMONY WIDGET ── */
+.harmony-widget{
+  background:var(--glass2);border:1px solid var(--glass-b);
+  border-radius:14px;padding:1.4rem;margin-bottom:1.75rem;
+  box-shadow:var(--sh);
+}
+.hw-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.hw-label{font-family:'DM Mono',monospace;font-size:.56rem;letter-spacing:.22em;text-transform:uppercase;color:var(--t3)}
+.hw-score{font-family:'Cormorant',serif;font-size:2rem;font-weight:300;color:var(--gold);line-height:1}
+.hw-score-sub{font-family:'DM Mono',monospace;font-size:.48rem;color:var(--t3);letter-spacing:.1em;text-transform:uppercase;margin-top:.1rem}
+/* Color palette display — como el PDF */
+.hw-palette{display:flex;gap:3px;height:28px;border-radius:6px;overflow:hidden;margin-bottom:.9rem}
+.hw-swatch{flex:1;transition:flex .5s var(--eo)}
+/* Pattern grid — los esquemas del PDF */
+.hw-pattern-label{font-family:'DM Mono',monospace;font-size:.52rem;letter-spacing:.16em;text-transform:uppercase;color:var(--t3);margin-bottom:.55rem}
+.hw-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;border-radius:4px;overflow:hidden;margin-bottom:.75rem}
+.hw-cell{aspect-ratio:1;border-radius:0;transition:background .4s var(--eo)}
+/* Track */
+.hw-track{height:2px;background:var(--line);overflow:hidden;border-radius:2px;margin-bottom:.5rem}
+.hw-fill{height:100%;background:var(--grad-gold);transition:width 900ms var(--eo)}
+.hw-note{font-size:.72rem;color:var(--t3);line-height:1.55}
+.hw-pattern-name{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--gold);letter-spacing:.1em;margin-bottom:.3rem}
+
+/* ── PHONE 3D + FEED REORDENABLE ── */
+.phone-section{
+  background:var(--glass2);border:1px solid var(--glass-b);
+  border-radius:14px;padding:1.5rem;margin-bottom:1.75rem;
+  box-shadow:var(--sh);
+}
+.phone-section-label{font-family:'DM Mono',monospace;font-size:.56rem;letter-spacing:.22em;text-transform:uppercase;color:var(--t3);margin-bottom:.6rem;display:flex;align-items:center;gap:.55rem}
+.phone-section-label::before{content:'';width:1rem;height:1px;background:var(--gold);display:block}
+.phone-section-sub{font-size:.72rem;color:var(--t3);margin-bottom:1.25rem;line-height:1.55}
+.phone-scene{display:flex;justify-content:center;align-items:flex-start;padding:0}
+.phone-wrap{
+  width:100%;
+  max-width:320px;
+  background:#101010;
+  border-radius:36px;
+  position:relative;
+  box-shadow:
+    0 0 0 1.5px rgba(255,255,255,.14),
+    0 0 0 2.5px rgba(0,0,0,.8),
+    0 24px 64px rgba(0,0,0,.9),
+    inset 0 1px 0 rgba(255,255,255,.08);
+}
+.phone-notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:88px;height:26px;background:#0A0A0A;border-radius:0 0 18px 18px;z-index:11;display:flex;align-items:center;justify-content:center;gap:7px}
+.phone-notch-dot{width:9px;height:9px;border-radius:50%;background:#070707;border:1px solid #1A1A1A}
+.phone-notch-pill{width:32px;height:9px;border-radius:4px;background:#070707;border:1px solid #1A1A1A}
+.phone-btn-v1{position:absolute;left:-8px;top:68px;width:3px;height:20px;background:#1E1E1E;border-radius:2px 0 0 2px}
+.phone-btn-v2{position:absolute;left:-8px;top:94px;width:3px;height:20px;background:#1E1E1E;border-radius:2px 0 0 2px}
+.phone-btn-pw{position:absolute;right:-8px;top:78px;width:3px;height:28px;background:#1E1E1E;border-radius:0 2px 2px 0}
+.phone-screen{border-radius:30px;overflow:hidden;background:#F4F1EC;position:relative;margin:0}
+.phone-glare{position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(135deg,rgba(255,255,255,.07) 0%,transparent 40%);pointer-events:none;z-index:10;border-radius:30px}
+
+/* Instagram UI inside phone */
+.ig-status-bar{display:flex;justify-content:space-between;align-items:center;padding:10px 16px 4px;font-size:10px;font-weight:600;color:#1A1612;font-family:'Outfit',sans-serif;background:#F4F1EC}
+.ig-status-icons{display:flex;gap:3px;align-items:center;font-size:9px}
+.ig-topbar{display:flex;align-items:center;justify-content:space-between;padding:3px 12px 6px;position:sticky;top:0;background:#F4F1EC;z-index:5}
+.ig-handle-txt{font-size:15px;font-weight:700;color:#1A1612;font-family:'Outfit',sans-serif}
+.ig-topbar-icons-ig{display:flex;gap:12px;align-items:center;font-size:18px;color:#1A1612}
+.ig-profile-row{display:flex;align-items:center;gap:12px;padding:6px 12px 8px}
+.ig-av-ring{width:76px;height:76px;border-radius:50%;flex-shrink:0;background:linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);padding:2.5px}
+.ig-av-inner-ring{width:100%;height:100%;border-radius:50%;background:#F4F1EC;padding:2px;overflow:hidden}
+.ig-av-inner-ring img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block}
+.ig-stats{display:flex;flex:1}
+.ig-stat{flex:1;text-align:center}
+.ig-stat-n{font-size:14px;font-weight:700;color:#1A1612;font-family:'Outfit',sans-serif;display:block;line-height:1.1}
+.ig-stat-l{font-size:9px;color:#737373;font-family:'Outfit',sans-serif;display:block}
+.ig-bio-inner{padding:0 12px 8px}
+.ig-bio-inner-name{font-size:13px;font-weight:700;color:#1A1612;font-family:'Outfit',sans-serif}
+.ig-bio-inner-cat{font-size:11px;color:#737373;font-family:'Outfit',sans-serif}
+.ig-bio-inner-line{font-size:11px;color:#1A1612;font-family:'Outfit',sans-serif;line-height:1.4}
+.ig-actions-inner{display:flex;gap:4px;padding:0 12px 8px}
+.ig-act-inner{flex:1;border-radius:6px;font-size:12px;font-weight:600;font-family:'Outfit',sans-serif;padding:6px 0;border:none;cursor:default;text-align:center}
+.ig-act-f{background:#2D5016;color:#fff}
+.ig-act-m,.ig-act-c{background:#EFEFEF;color:#1A1612}
+.ig-act-add{background:#EFEFEF;color:#1A1612;flex:0 0 28px;border-radius:6px}
+.ig-highlights-inner{display:flex;gap:10px;padding:0 12px 8px;overflow-x:auto}
+.ig-highlights-inner::-webkit-scrollbar{display:none}
+.ig-hl-inner{text-align:center;flex-shrink:0;width:60px}
+.ig-hl-ring-inner{width:54px;height:54px;border-radius:50%;border:1.5px solid #DBDBDB;margin:0 auto 3px;overflow:hidden;background:#FAFAFA;display:flex;align-items:center;justify-content:center}
+.ig-hl-ring-inner img{width:100%;height:100%;object-fit:cover;display:block}
+.ig-hl-lbl-inner{font-size:9px;color:#1A1612;font-family:'Outfit',sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ig-tabs-inner{display:flex;border-top:1px solid #DBDBDB}
+.ig-tab-inner{flex:1;padding:7px 0;text-align:center;font-size:14px;color:#C7C7C7}
+.ig-tab-inner.on{color:#1A1612;border-top:1.5px solid #1A1612;margin-top:-1px}
+
+/* PHONE FEED GRID — drag & drop inside phone */
+.phone-feed-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:1px;
+  background:#DBDBDB;user-select:none;
+}
+.phone-cell{
+  aspect-ratio:1;overflow:hidden;background:#F0EDE8;
+  position:relative;cursor:grab;
+}
+.phone-cell:active{cursor:grabbing;opacity:.7}
+.phone-cell.phone-drag-over{box-shadow:inset 0 0 0 2px #2D5016}
+.phone-cell img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;transition:transform 200ms}
+.phone-cell:hover img{transform:scale(1.05)}
+.phone-cell-empty{background:#EDE8DC;cursor:default}
+.phone-cell-video-badge{position:absolute;top:3px;right:3px;font-size:8px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.7)}
+
+/* Phone screen scroll */
+.phone-screen-scroll{height:680px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.phone-screen-scroll::-webkit-scrollbar{display:none}
+
+
+/* ── CLIENT TABS ── */
+.c-nav-tab{font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:var(--t3);padding:.5rem 1rem;border-radius:5px;background:var(--glass);border:1px solid var(--line2);cursor:none;transition:all 160ms var(--eo)}
+.c-nav-tab.on{color:var(--gold);background:var(--goldL);border-color:var(--goldB)}
+.c-nav-tab:hover:not(.on){color:var(--t2);border-color:var(--line3)}
+
+/* ── APPROVAL GRID ── */
+.c-card-img{position:absolute;inset:0}
+.c-card-img img,.c-card-img video{width:100%;height:100%;object-fit:cover;display:block}
+.c-card-overlay{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:.75rem .65rem;background:linear-gradient(to top,rgba(26,22,18,.92) 0%,rgba(26,22,18,.3) 50%,transparent 72%);transition:all 200ms;border:2px solid transparent}
+.c-card-status-pill{font-family:'DM Mono',monospace;font-size:.45rem;letter-spacing:.1em;text-transform:uppercase;padding:.18rem .4rem;border-radius:3px;display:inline-flex;align-items:center;gap:.25rem;margin-bottom:.25rem;align-self:flex-start}
+.c-card-caption{font-size:.68rem;color:rgba(237,232,223,.92);font-weight:300;line-height:1.4;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:.4rem}
+.c-card-actions{display:flex;gap:.25rem}
+.c-card-btn-ok{background:var(--grad-gold);color:var(--bg);border:none;font-family:'DM Mono',monospace;font-size:.52rem;letter-spacing:.1em;text-transform:uppercase;padding:.35rem .7rem;border-radius:3px;cursor:none;transition:all 140ms;white-space:nowrap;flex:1}
+.c-card-btn-ok.done{background:var(--greenL);color:var(--green);border:1px solid var(--greenB)}
+.c-card-btn-change{background:rgba(237,232,223,.1);color:var(--t2);border:1px solid var(--line2);font-family:'DM Mono',monospace;font-size:.52rem;letter-spacing:.1em;text-transform:uppercase;padding:.35rem .55rem;border-radius:3px;cursor:none;transition:all 140ms;white-space:nowrap}
+.c-card-btn-change:hover{color:var(--rose);border-color:var(--roseB)}
+.c-card-changes-note{font-size:.55rem;color:var(--rose);background:var(--roseL);border-radius:3px;padding:.2rem .35rem;margin-bottom:.25rem;line-height:1.3}
+
+/* ── APPROVAL LIST ── */
+.c-section-lbl{font-family:'DM Mono',monospace;font-size:.56rem;letter-spacing:.2em;text-transform:uppercase;color:var(--t3);margin-bottom:.65rem;display:flex;align-items:center;gap:.55rem}
+.c-section-lbl::before{content:'';width:1rem;height:1px;background:var(--gold);display:block}
+.c-posts{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin-bottom:1.75rem;background:var(--line2);border-radius:8px;overflow:hidden;min-height:0}
+.c-post-card{background:var(--glass2);border:none;border-radius:0;display:flex;flex-direction:column;animation:cardIn 300ms var(--eo) both;transition:opacity 200ms;position:relative;overflow:hidden;aspect-ratio:4/5;cursor:pointer;min-height:200px}
+.c-post-card:hover{opacity:.85}
+.c-post-card.is-approved .c-card-overlay{background:rgba(74,222,128,.18);border:2px solid var(--green)}
+.c-post-card.is-changes .c-card-overlay{background:rgba(251,113,133,.15);border:2px solid var(--rose)}
+.c-thumb{width:68px;height:68px;border-radius:7px;overflow:hidden;flex-shrink:0;position:relative;background:var(--bg3)}
+.c-thumb img,.c-thumb video{width:100%;height:100%;object-fit:cover;display:block}
+.c-thumb-vicon{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(26,22,18,.25);font-size:.9rem}
+.c-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:.32rem}
+.c-meta{display:flex;align-items:center;gap:.38rem}
+.c-date{font-family:'DM Mono',monospace;font-size:.54rem;color:var(--t3);letter-spacing:.06em}
+.c-type-pill{font-family:'DM Mono',monospace;font-size:.46rem;background:var(--bg3);color:var(--t3);padding:.1rem .32rem;border-radius:3px}
+.c-cap{font-size:.76rem;color:var(--t1);line-height:1.5;font-weight:300;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.c-changes-note{font-size:.68rem;color:var(--rose);padding:.3rem .5rem;background:var(--roseL);border:1px solid var(--roseB);border-radius:.25rem;line-height:1.4}
+.c-actions{display:flex;gap:.35rem;margin-top:.08rem}
+.c-btn-ok{background:var(--grad-gold);color:var(--bg);border:none;font-family:'DM Mono',monospace;font-size:.54rem;letter-spacing:.12em;text-transform:uppercase;padding:.34rem .8rem;border-radius:.25rem;cursor:none;transition:all 140ms;white-space:nowrap}
+.c-btn-ok.done{background:transparent;color:var(--green);border:1px solid var(--greenB)}
+.c-btn-change{background:transparent;color:var(--t3);border:1px solid var(--line2);font-family:'DM Mono',monospace;font-size:.54rem;letter-spacing:.12em;text-transform:uppercase;padding:.34rem .7rem;border-radius:.25rem;cursor:none;transition:all 140ms;white-space:nowrap}
+.c-btn-change:hover{color:var(--rose);border-color:var(--roseB)}
+.c-approve-all{width:100%;background:var(--grad-gold);color:var(--bg);border:none;font-family:'DM Mono',monospace;font-size:.65rem;letter-spacing:.22em;text-transform:uppercase;padding:.92rem;border-radius:8px;cursor:none;margin-bottom:.55rem;transition:all 180ms var(--eo)}
+.c-approve-all:hover{filter:brightness(1.08);transform:translateY(-1px);box-shadow:0 4px 20px rgba(201,168,76,.3)}
+.c-approve-all:active{transform:scale(.98)}
+.c-approve-all.partial{background:var(--goldL);color:var(--gold);border:1px solid var(--goldB);box-shadow:none;transform:none;filter:none}
+.c-approve-note{font-family:'DM Mono',monospace;font-size:.56rem;color:var(--t3);text-align:center;line-height:1.65;letter-spacing:.04em}
+.c-success{display:none;background:var(--goldL);border:1px solid var(--goldB);border-radius:10px;padding:1.75rem;text-align:center;margin-top:1rem}
+.c-success.on{display:block}
+.c-success-title{font-family:'Cormorant',serif;font-size:1.65rem;font-style:italic;color:var(--gold);margin-bottom:.4rem}
+.c-success-sub{font-size:.78rem;color:var(--t3);line-height:1.7;font-weight:300}
+
+/* Month pill */
+.c-month{display:inline-flex;align-items:center;gap:.5rem;background:var(--goldL);border:1px solid var(--goldB);color:var(--gold);font-family:'DM Mono',monospace;font-size:.56rem;letter-spacing:.22em;text-transform:uppercase;padding:.3rem 1rem;border-radius:20px;margin-bottom:.9rem}
+.c-title{font-family:'Cormorant',serif;font-size:clamp(2.2rem,8vw,3.2rem);font-weight:300;line-height:.92;letter-spacing:-.025em;color:var(--t1);margin-bottom:.45rem}
+.c-title em{font-style:italic;color:var(--gold)}
+.c-subtitle{font-size:.8rem;color:var(--t3);line-height:1.75;margin-bottom:1.75rem;font-weight:300}
+
+/* Changes modal */
+.ch-overlay{position:fixed;inset:0;z-index:300;background:rgba(26,22,18,0);pointer-events:none;transition:background 200ms;display:flex;align-items:flex-end;justify-content:center}
+.ch-overlay.on{background:rgba(0,0,0,.6);pointer-events:all}
+.ch-sheet{width:100%;max-width:520px;background:var(--bg2);border-radius:14px 14px 0 0;padding:1.35rem 1.75rem 2rem;transform:translateY(110%);transition:transform 360ms var(--spring);border-top:1px solid var(--line2);box-shadow:0 -8px 40px rgba(0,0,0,.6)}
+.ch-overlay.on .ch-sheet{transform:translateY(0)}
+.ch-drag{width:2.25rem;height:3px;background:var(--line2);border-radius:2px;margin:0 auto 1.35rem}
+.ch-title{font-family:'Cormorant',serif;font-size:1.4rem;font-style:italic;color:var(--t1);margin-bottom:1rem}
+.ch-inp{width:100%;background:var(--bg3);border:1px solid var(--line2);color:var(--t1);font-size:.88rem;font-weight:300;padding:.85rem 1rem;outline:none;resize:none;border-radius:8px;margin-bottom:.8rem;-webkit-appearance:none;transition:border-color 140ms}
+.ch-inp:focus{border-color:var(--goldB)}
+.ch-submit{width:100%;background:var(--grad-gold);color:var(--bg);border:none;font-family:'DM Mono',monospace;font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;padding:.88rem;border-radius:7px;cursor:none;transition:all 140ms}
+.ch-submit:hover{filter:brightness(1.08)}
+.ch-cancel{width:100%;background:none;border:none;color:var(--t3);font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;padding:.75rem;cursor:none;margin-top:.25rem}
+
+/* Toast */
+.toast{position:fixed;top:5rem;left:50%;transform:translateX(-50%) translateY(-14px);padding:.65rem 1.4rem;font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.1em;z-index:900;opacity:0;pointer-events:none;transition:all 260ms var(--spring);white-space:nowrap;border-radius:6px;max-width:calc(100vw - 2rem);text-align:center}
+.toast.admin{background:var(--glass2);color:var(--gold);border:1px solid var(--goldB);backdrop-filter:blur(16px)}
+.toast.success{background:var(--greenL);color:var(--green);border:1px solid var(--greenB)}
+.toast.error{background:var(--roseL);color:var(--rose);border:1px solid var(--roseB)}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--line2);border-radius:4px}
+
+/* ── ADMIN MOBILE ── */
+@media(max-width:768px){
+  .top-nav{padding:0 1rem;height:3.25rem}
+  .nav-logo{font-size:.9rem}
+  .nav-tabs{gap:.1rem}
+  .nav-tab{font-size:.5rem;letter-spacing:.08em;padding:.38rem .6rem}
+  .a-body{padding:1rem}
+  .client-bar{padding:.75rem 1rem;gap:.6rem}
+  .client-select{font-size:.95rem}
+  .q-grid{grid-template-columns:repeat(2,1fr);gap:.6rem}
+  .media-type-row{gap:.35rem}
+  .mtype-btn{font-size:.5rem;padding:.5rem .4rem}
+  .upload-zone{padding:1.5rem 1rem}
+  .ai-btn{font-size:.56rem;padding:.75rem}
+  .btn-primary{font-size:.58rem;padding:.85rem}
+  .meta-section{gap:.85rem}
+  .panel-card{padding:1.1rem}
+  .an-grid{grid-template-columns:repeat(2,1fr)}
+  .cal-grid{gap:.25rem}
+  .cal-day{font-size:.68rem}
+}
+@media(max-width:480px){
+  .nav-tabs{display:none}
+  .nav-mobile-menu{display:flex}
+  .top-nav{justify-content:space-between}
+  .q-grid{grid-template-columns:1fr 1fr}
+  .qcard-body{padding:.6rem}
+  .qcard-caption{font-size:.65rem}
+}
+
+</style>
+</head>
+<body>
+<div id="cur-t"></div><div id="cur-d"></div>
+
+<!-- LOGIN -->
+<div class="scr on" id="sc-login">
+  <div class="login-wrap">
+    <div class="login-eyebrow">Feed Manager · IA Social</div>
+    <h1 class="login-h">Bienve<em>nido.</em></h1>
+    <p class="login-sub">Gestiona, planifica y publica el feed de Instagram con análisis de armonía aesthetic por IA.</p>
+    <div class="role-pills">
+      <button class="rpill on" onclick="setRole('admin',this)">Admin</button>
+      <button class="rpill" onclick="setRole('client',this)">Cliente</button>
+    </div>
+    <input class="finp" type="text" id="lUser" placeholder="Usuario" onkeydown="if(event.key==='Enter')doLogin()">
+    <input class="finp" type="password" id="lPass" placeholder="Contraseña" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" onclick="doLogin()">Entrar →</button>
+    <div class="login-err" id="loginErr">Usuario o contraseña incorrectos</div>
+    <div class="login-demo">
+      <div class="login-demo-label">Accesos demo</div>
+      <div class="login-demo-row">Admin: <b>admin</b> / <b>admin123</b></div>
+      <div class="login-demo-row">Sarai: <b>sarai</b> / <b>sarai2025</b></div>
+    </div>
+    <div class="login-reg-row">¿Nuevo cliente? <button class="login-reg-btn" onclick="openReg()">Crear cuenta →</button></div>
+  </div>
+</div>
+
+<!-- REGISTER -->
+<div class="reg-overlay" id="regOverlay">
+  <div class="reg-box">
+    <button class="reg-back" onclick="closeReg()">← Volver al login</button>
+    <div class="reg-eyebrow">IA Social · Nuevo cliente</div>
+    <div class="reg-title">Crea tu cuenta.</div>
+    <p class="reg-sub">Rellena tus datos y el equipo se pondrá en contacto en menos de 24h.</p>
+    <div class="reg-grid2">
+      <input class="reg-inp" type="text" id="rNombre" placeholder="Tu nombre *">
+      <input class="reg-inp" type="text" id="rNegocio" placeholder="Nombre del negocio *">
+    </div>
+    <input class="reg-inp" type="email" id="rEmail" placeholder="Email de contacto *">
+    <input class="reg-inp" type="tel" id="rTel" placeholder="Teléfono / WhatsApp">
+    <input class="reg-inp" type="text" id="rIg" placeholder="@instagram_handle">
+    <select class="reg-select" id="rPlan" onchange="this.classList.add('ok')">
+      <option value="" disabled selected>Servicio de interés</option>
+      <option value="chatbot">Chatbot Web + WhatsApp — 350€</option>
+      <option value="contenido">Gestión de contenido — 200€/mes</option>
+      <option value="automatizacion">Automatizaciones — 600€</option>
+      <option value="pack">Pack completo IA Business</option>
+    </select>
+    <div class="reg-grid2">
+      <input class="reg-inp" type="text" id="rUser" placeholder="Usuario *">
+      <input class="reg-inp" type="password" id="rPass" placeholder="Contraseña *">
+    </div>
+    <button class="reg-submit" onclick="doRegister()">Crear cuenta y notificar al equipo →</button>
+    <div class="reg-err" id="regErr">Por favor rellena los campos obligatorios (*)</div>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div class="scr" id="sc-admin">
+  <nav class="top-nav">
+    <div><span class="nav-logo">Feed Manager<small>IA Social</small></span></div>
+    <div class="nav-tabs">
+      <button class="nav-tab on" onclick="aTab('queue',this)">Cola</button>
+      <button class="nav-tab" onclick="aTab('calendar',this)">Calendario</button>
+      <button class="nav-tab" onclick="aTab('meta',this)">Meta API</button>
+      <button class="nav-tab" onclick="aTab('analytics',this)">Stats</button>
+    </div>
+    <button class="nav-btn" onclick="logout()">Salir</button>
+  </nav>
+  <div class="a-body">
+    <div class="client-bar">
+      <div class="client-bar-label">Cliente activo</div>
+      <div class="client-bar-sep"></div>
+      <select class="client-select" id="clientSelect" onchange="switchClient()">
+        <option value="sarai">Floristería Sarai</option>
+        <option value="barber">The Barber 080</option>
+      </select>
+      <button class="btn-gold-sm" onclick="openNC()">+ Nuevo cliente</button>
+    </div>
+
+    <div id="tab-queue">
+      <div class="media-type-row">
+        <button class="mtype-btn on" onclick="setMT('image',this)">🖼 Imagen</button>
+        <button class="mtype-btn" onclick="setMT('reel',this)">🎬 Reel</button>
+        <button class="mtype-btn" onclick="setMT('video',this)">📹 Vídeo</button>
+      </div>
+      <div class="upload-zone" id="uploadZone">
+        <input type="file" accept="image/*" multiple onchange="handleUpload(event)" id="fileIn">
+        <div class="upload-zone-icon" id="uzIcon">↑ Subir fotos al feed</div>
+        <div class="upload-zone-sub" id="uzSub">JPG, PNG · Varias a la vez · Drag & drop</div>
+      </div>
+      <button class="ai-btn" id="aiBtn" onclick="analyzeAI()" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        Analizar con IA
+      </button>
+      <div class="section-head"><div class="section-title">Cola de publicaciones</div><div class="section-meta" id="qMeta">0 posts</div></div>
+      <div class="q-grid" id="qGrid"><div class="q-empty">Sube fotos para empezar a planificar el feed del mes</div></div>
+      <div class="send-wrap">
+        <button class="btn-primary" onclick="sendToClient()">Enviar feed al cliente para aprobación →</button>
+        <div class="send-note">El cliente recibirá una notificación por email y podrá reordenar el feed desde su móvil.</div>
+      </div>
+    </div>
+
+    <div id="tab-calendar" style="display:none">
+      <div class="cal-head"><div class="cal-month" id="calMonthTitle"></div><div class="cal-nav-btns"><button class="cal-nav-btn" onclick="calNav(-1)">←</button><button class="cal-nav-btn" onclick="calNav(1)">→</button></div></div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="section-title" style="margin-bottom:.85rem">Programadas</div>
+      <div class="sched-list" id="schedList"></div>
+    </div>
+
+    <div id="tab-meta" style="display:none">
+      <div class="meta-section">
+        <div class="panel-card">
+          <div class="panel-card-hd"><div class="panel-title">Conector Instagram API</div><div class="status-pill pending" id="metaStatusPill">Pendiente</div></div>
+          <p class="panel-note">Conecta tu cuenta de Instagram Business para publicar directamente desde esta app.</p>
+          <div class="meta-steps">
+            <div class="meta-step done"><div class="meta-step-n done">✓</div><div class="meta-step-txt">App en <strong>developers.facebook.com</strong> tipo Business</div></div>
+            <div class="meta-step done"><div class="meta-step-n done">✓</div><div class="meta-step-txt">Permiso <strong>instagram_business_content_publish</strong></div></div>
+            <div class="meta-step" id="metaStep3"><div class="meta-step-n">3</div><div class="meta-step-txt">Pegar credenciales abajo</div></div>
+            <div class="meta-step" id="metaStep4"><div class="meta-step-n">4</div><div class="meta-step-txt">Probar conexión</div></div>
+            <div class="meta-step" id="metaStep5"><div class="meta-step-n">5</div><div class="meta-step-txt">Activar publicación automática</div></div>
+          </div>
+        </div>
+        <div class="panel-card">
+          <div style="font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:.9rem">Credenciales</div>
+          <input class="meta-inp" type="text" id="metaIgId" placeholder="Instagram Business Account ID">
+          <input class="meta-inp" type="text" id="metaToken" placeholder="Long-lived Access Token">
+          <input class="meta-inp" type="text" id="imgbbKey" placeholder="imgbb API Key (para imágenes)">
+          <input class="meta-inp" type="text" id="cloudinaryCloud" placeholder="Cloudinary Cloud Name (para vídeos)">
+          <input class="meta-inp" type="text" id="cloudinaryPreset" placeholder="Cloudinary Upload Preset (unsigned)">
+          <button class="btn-gold-full" onclick="saveCreds()">Guardar credenciales</button>
+          <button class="btn-green-full" id="metaTestBtn" onclick="testMeta()" disabled>Probar conexión con Instagram</button>
+        </div>
+        <div class="info-banner blue"><div class="info-banner-title">imgbb — imágenes</div><p class="info-banner-note">Meta requiere URL pública. <a href="https://api.imgbb.com/" target="_blank">imgbb.com</a> hosting gratuito.</p></div>
+        <div class="info-banner purple"><div class="info-banner-title">Cloudinary — vídeos</div><p class="info-banner-note"><a href="https://cloudinary.com" target="_blank">Cloudinary</a> plan gratuito 25GB. Settings → Upload → Preset Unsigned.</p></div>
+        <div class="toggle-wrap"><div><div class="toggle-label">Publicación automática</div><div class="toggle-sub">Publica según el calendario</div></div><button class="toggle-sw" id="autoToggle" onclick="toggleAuto()"></button></div>
+        <div>
+          <div style="font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:var(--t3);margin-bottom:.6rem">Historial</div>
+          <div class="pub-log"><div class="pub-log-empty" id="pubLogEmpty">Sin actividad todavía</div><div id="pubLog"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-analytics" style="display:none">
+      <div class="an-grid">
+        <div class="an-card"><div class="an-n" id="anP">0</div><div class="an-l">Pendientes</div></div>
+        <div class="an-card"><div class="an-n" id="anA">0</div><div class="an-l">Aprobadas</div></div>
+        <div class="an-card"><div class="an-n" id="anPub">0</div><div class="an-l">Publicadas</div></div>
+        <div class="an-card"><div class="an-n" id="anC">0</div><div class="an-l">Con cambios</div></div>
+      </div>
+      <div style="background:var(--glass2);border:1px solid var(--glass-b);border-radius:10px;padding:1.5rem;text-align:center;color:var(--t3);font-size:.8rem;line-height:1.75">Próximamente: engagement de Instagram, mejores horas de publicación y análisis histórico de armonía.</div>
+    </div>
+  </div>
+</div>
+
+<!-- CLIENT -->
+<div class="scr" id="sc-client">
+  <nav class="top-nav">
+    <div style="display:flex;flex-direction:column">
+      <span class="nav-logo">Feed Manager</span>
+      <span style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--t3);letter-spacing:.2em;text-transform:uppercase;margin-top:.1rem" id="cLabel">Floristería Sarai</span>
+    </div>
+    <button class="nav-btn" onclick="logout()">Salir</button>
+  </nav>
+  <div class="c-body">
+    <div class="c-profile-bar">
+      <div class="c-av" id="cAv">S</div>
+      <div><div class="c-handle" id="cHandle">@floristeria_sarai</div><div class="c-handle-note">Feed propuesto para este mes</div></div>
+    </div>
+
+    <div class="c-month" id="cMonth">Junio 2025</div>
+    <h1 class="c-title">Revisa y<br><em>aprueba.</em></h1>
+    <p class="c-subtitle">Estas son las publicaciones propuestas. Arrastra las fotos en el móvil para reordenar tu feed antes de aprobar.</p>
+
+    <!-- TWO-COLUMN LAYOUT -->
+    <div class="c-layout">
+    <!-- LEFT: PHONE -->
+    <div class="c-col-phone">
+    <!-- PHONE SECTION — feed reordenable -->
+    <div class="phone-section">
+      <div class="phone-section-label">Preview del feed</div>
+      <p class="phone-section-sub">Arrastra las fotos en el móvil para reordenar tu feed. Los cambios se reflejan al instante.</p>
+      <div class="phone-scene">
+        <div class="phone-wrap">
+          <div class="phone-notch">
+            <div class="phone-notch-dot"></div>
+            <div class="phone-notch-pill"></div>
+            <div class="phone-notch-dot"></div>
+          </div>
+          <div class="phone-btn-v1"></div>
+          <div class="phone-btn-v2"></div>
+          <div class="phone-btn-pw"></div>
+          <div class="phone-screen">
+            <div class="phone-glare"></div>
+            <div class="phone-screen-scroll">
+              <!-- Status bar -->
+              <div class="ig-status-bar">
+                <span>9:41</span>
+                <div class="ig-status-icons"><span>▲▲▲</span><span>5G</span><span>🔋</span></div>
+              </div>
+              <!-- IG topbar -->
+              <div class="ig-topbar">
+                <span class="ig-handle-txt" id="phoneHandle">floristeria_sarai</span>
+                <div class="ig-topbar-icons-ig"><span>🔔</span><span style="font-size:.75rem;letter-spacing:-.05em">•••</span></div>
+              </div>
+              <!-- Profile -->
+              <div class="ig-profile-row">
+                <div class="ig-av-ring">
+                  <div class="ig-av-inner-ring">
+                    <img id="phoneAvImg" src="https://superb-kleicha-f2522c.netlify.app/Image/Ramo%20novia%20variado%20granate.jpg" alt="avatar" onerror="this.style.display='none'">
+                  </div>
+                </div>
+                <div class="ig-stats">
+                  <div class="ig-stat"><span class="ig-stat-n" id="phoneStatPosts">577</span><span class="ig-stat-l">posts</span></div>
+                  <div class="ig-stat"><span class="ig-stat-n">901</span><span class="ig-stat-l">seguidores</span></div>
+                  <div class="ig-stat"><span class="ig-stat-n">2021</span><span class="ig-stat-l">seguidos</span></div>
+                </div>
+              </div>
+              <!-- Bio -->
+              <div class="ig-bio-inner">
+                <div class="ig-bio-inner-name" id="phoneBioName">Floristería Sarai 🌸</div>
+                <div class="ig-bio-inner-cat">Florista</div>
+                <div class="ig-bio-inner-line">🌿 Since 1988 · El Prat de Llobregat 📍</div>
+              </div>
+              <!-- Actions -->
+              <div class="ig-actions-inner">
+                <button class="ig-act-inner ig-act-f">Siguiendo ▾</button>
+                <button class="ig-act-inner ig-act-m">Mensaje</button>
+                <button class="ig-act-inner ig-act-c">Contactar</button>
+                <button class="ig-act-inner ig-act-add">+</button>
+              </div>
+              <!-- Highlights -->
+              <div class="ig-highlights-inner">
+                <div class="ig-hl-inner"><div class="ig-hl-ring-inner"><img src="https://superb-kleicha-f2522c.netlify.app/Image/Ramo%20variado.jpg" onerror="this.parentNode.textContent='🌸'"></div><div class="ig-hl-lbl-inner">Madre</div></div>
+                <div class="ig-hl-inner"><div class="ig-hl-ring-inner"><img src="https://images.unsplash.com/photo-1549488344-cbb6c34a8132?w=60&q=60" onerror="this.parentNode.textContent='🎄'"></div><div class="ig-hl-lbl-inner">Navidad</div></div>
+                <div class="ig-hl-inner"><div class="ig-hl-ring-inner"><img src="https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=60&q=60" onerror="this.parentNode.textContent='❤️'"></div><div class="ig-hl-lbl-inner">San Valentin</div></div>
+                <div class="ig-hl-inner"><div class="ig-hl-ring-inner"><img src="https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?w=60&q=60" onerror="this.parentNode.textContent='⭐'"></div><div class="ig-hl-lbl-inner">Destac.</div></div>
+              </div>
+              <!-- Tabs -->
+              <div class="ig-tabs-inner">
+                <div class="ig-tab-inner on">⊞</div>
+                <div class="ig-tab-inner">☰</div>
+                <div class="ig-tab-inner">♡</div>
+              </div>
+              <!-- FEED GRID — drag & drop inside phone -->
+              <div class="phone-feed-grid" id="phoneFeedGrid"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /phone-section -->
+    </div><!-- /c-col-phone -->
+
+    <!-- RIGHT: CONTENT -->
+    <div class="c-col-content">
+
+    <!-- CALENDAR TAB (client) -->
+    <div class="c-cal-wrap" id="cCalWrap">
+      <div class="c-cal-head">
+        <div class="c-section-lbl" style="margin:0">Calendario de publicaciones</div>
+        <div style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--gold)" id="cCalTitle"></div>
+      </div>
+      <div class="c-cal-grid" id="cCalDows"></div>
+      <div class="c-cal-grid" id="cCalGrid"></div>
+      <div class="c-cal-note">Las fotos aparecen en el día de publicación programada</div>
+    </div>
+
+    <!-- INSTAGRAM DASHBOARD (client) -->
+    <div class="c-cal-wrap" id="cDashboard" style="display:none">
+      <div class="c-cal-head"><div class="c-section-lbl" style="margin:0">Métricas de Instagram</div><div style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--t3)">Live · API conectada</div></div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.6rem;margin-bottom:1rem" id="cDashStats"></div>
+      <div style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--t3);text-align:center;letter-spacing:.06em">Conecta tu cuenta en Meta API para ver métricas reales</div>
+    </div>
+
+    <!-- CLIENT NAV TABS -->
+    <div style="display:flex;gap:.4rem;margin-bottom:1.25rem;flex-wrap:wrap">
+      <button class="c-nav-tab on" onclick="cTab('feed',this)">🖼 Feed</button>
+      <button class="c-nav-tab" onclick="cTab('calendar',this)">📅 Calendario</button>
+      <button class="c-nav-tab" onclick="cTab('stats',this)">📊 Estadísticas</button>
+    </div>
+
+    <!-- APPROVAL GRID -->
+    <div id="cTabFeed">
+    <!-- APPROVAL LIST -->
+    <div class="c-section-lbl">Publicaciones a revisar</div>
+    <div class="c-posts" id="cPosts"></div>
+    <button class="c-approve-all" id="cApproveAll" onclick="approveAll()">Aprobar todas las publicaciones</button>
+    <div class="c-approve-note" id="cApproveNote">0 de 0 aprobadas</div>
+    <div class="c-success" id="cSuccess">
+      <div class="c-success-title">Feed aprobado 🌸</div>
+      <div class="c-success-sub">Hemos recibido tu aprobación. Publicaremos según el calendario acordado. ¡Gracias!</div>
+    </div>
+    </div><!-- /cTabFeed -->
+    </div><!-- /c-col-content -->
+    </div><!-- /c-layout -->
+  </div>
+</div>
+
+<!-- CHANGES MODAL -->
+<div class="ch-overlay" id="chOverlay" onclick="closeChanges()"><div class="ch-sheet" onclick="event.stopPropagation()"><div class="ch-drag"></div><div class="ch-title">Pedir cambios</div><textarea class="ch-inp" id="chText" rows="4" placeholder="Cuéntanos qué quieres cambiar..."></textarea><button class="ch-submit" onclick="submitChanges()">Enviar</button><button class="ch-cancel" onclick="closeChanges()">Cancelar</button></div></div>
+
+<!-- NC MODAL -->
+<div class="nc-overlay" id="ncOverlay" onclick="closeNC()"><div class="nc-box" onclick="event.stopPropagation()"><div class="nc-title">Nuevo cliente</div><input class="nc-inp" type="text" id="ncName" placeholder="Nombre del negocio *"><input class="nc-inp" type="text" id="ncHandle" placeholder="@instagram_handle"><input class="nc-inp" type="email" id="ncEmail" placeholder="Email del cliente *"><input class="nc-inp" type="tel" id="ncPhone" placeholder="Teléfono / WhatsApp"><input class="nc-inp" type="text" id="ncUser" placeholder="Usuario de acceso *"><input class="nc-inp" type="password" id="ncPass" placeholder="Contraseña *"><button class="nc-submit" onclick="createClient()">Crear cliente</button><button class="nc-cancel" onclick="closeNC()">Cancelar</button></div></div>
+
+<!-- PUB OVERLAY -->
+<div class="pub-overlay" id="pubOverlay"><div class="pub-box"><div class="pub-spinner"></div><div class="pub-title" id="pubTitle">Publicando...</div><div class="pub-sub" id="pubSub">Procesando...</div></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ══════════════════════════════════════════════════
+
+/* ══════════════════════════════════════════════════
+   FIREBASE REALTIME DATABASE — Sync en tiempo real
+   Reemplaza localStorage. Funciona entre cualquier
+   dispositivo en cualquier red.
+══════════════════════════════════════════════════ */
+var FIREBASE_URL = "https://feed-manager-3b051-default-rtdb.europe-west1.firebasedatabase.app";
+var FIREBASE_PATH = "/feedmanager";
+var firebaseListener = null;
+var lastFirebaseTs = 0;
+var isSyncing = false;
+
+/* ── Escribir en Firebase (PUT) ── */
+function saveState(){
+  if(isSyncing) return; // evitar loop
+  var payload = {
+    posts: {},
+    ts: Date.now()
+  };
+  // Guardamos solo metadata + caption + status + date — NO las imágenes base64 (demasiado grandes)
+  // Las imágenes viven en memoria local; el resto se sincroniza
+  for(var client in posts){
+    payload.posts[client] = (posts[client]||[]).map(function(p){
+      return {
+        id: p.id,
+        caption: p.caption||"",
+        status: p.status||"pending",
+        date: p.date||"",
+        tone: p.tone||"neutral",
+        brightness: p.brightness||0.5,
+        color: p.color||"#888",
+        mediaType: p.mediaType||"image",
+        changesNote: p.changesNote||"",
+        url: p.url&&p.url.length<5000 ? p.url : "" // solo URLs cortas (no base64)
+      };
+    });
+  }
+  fetch(FIREBASE_URL + FIREBASE_PATH + ".json", {
+    method: "PUT",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify(payload)
+  }).catch(function(e){ console.warn("Firebase write error:", e.message); });
+}
+
+/* ── Leer desde Firebase ── */
+function loadState(cb){
+  fetch(FIREBASE_URL + FIREBASE_PATH + ".json")
+  .then(function(r){ return r.json(); })
+  .then(function(payload){
+    if(!payload || !payload.posts){ if(cb)cb(false); return; }
+    if(payload.ts <= lastFirebaseTs){ if(cb)cb(false); return; }
+    lastFirebaseTs = payload.ts;
+    isSyncing = true;
+    for(var client in payload.posts){
+      if(!posts[client]) posts[client] = [];
+      payload.posts[client].forEach(function(remote){
+        var local = (posts[client]||[]).find(function(p){ return p.id === remote.id; });
+        if(local){
+          // Merge: actualizar caption/status/date/changesNote desde Firebase
+          if(remote.caption)   local.caption    = remote.caption;
+          if(remote.status)    local.status     = remote.status;
+          if(remote.date)      local.date       = remote.date;
+          local.changesNote = remote.changesNote || local.changesNote || "";
+          // Mantener url local (base64) — no la sobreescribimos con ""
+          if(remote.url && remote.url.length > 10) local.url = remote.url;
+        }
+      });
+    }
+    isSyncing = false;
+    if(cb) cb(true);
+  })
+  .catch(function(e){
+    console.warn("Firebase read error:", e.message);
+    if(cb) cb(false);
+  });
+}
+
+/* ── markSent: notifica al cliente via Firebase ── */
+function markSent(){
+  fetch(FIREBASE_URL + FIREBASE_PATH + "/sentTs.json", {
+    method: "PUT",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify(Date.now())
+  }).catch(function(){});
+}
+
+/* ── Polling Firebase cada 2.5s ── */
+var lastSentTs = 0;
+function checkRemoteUpdate(){
+  if(isSyncing) return;
+  fetch(FIREBASE_URL + FIREBASE_PATH + ".json?shallow=true")
+  .then(function(r){ return r.json(); })
+  .then(function(data){
+    if(!data) return;
+    var remoteTs = data.ts || 0;
+    var remoteSent = data.sentTs || 0;
+    // Si hay cambios nuevos o el admin acaba de enviar el feed
+    if(remoteTs > lastFirebaseTs || (role==="client" && remoteSent > lastSentTs)){
+      lastSentTs = remoteSent;
+      loadState(function(changed){
+        if(changed){
+          if(role==="admin"){ renderAdmin(); }
+          if(role==="client"){ renderPhoneFeed(); renderClientList(); updateApproveBtn(); showToast("Feed actualizado ✦","admin"); }
+        }
+      });
+    }
+  })
+  .catch(function(){});
+}
+setInterval(checkRemoteUpdate, 2500);
+
+/* ── Startup: cargar estado de Firebase ── */
+function initFirebase(){
+  loadState(function(loaded){
+    if(loaded) console.log("Firebase: estado cargado");
+    else console.log("Firebase: sin datos previos, usando estado local");
+  });
+}
+
+
+   THUMBNAIL — redimensiona imagen para API (móvil)
+   Convierte base64 grande → thumbnail 200px
+══════════════════════════════════════════════════ */
+function makeThumbnail(dataUrl, maxPx, quality, cb){
+  var img = new Image();
+  img.onload = function(){
+    var w = img.width, h = img.height;
+    var scale = Math.min(1, maxPx / Math.max(w, h));
+    var tw = Math.round(w * scale), th = Math.round(h * scale);
+    var canvas = document.createElement('canvas');
+    canvas.width = tw; canvas.height = th;
+    var ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, tw, th);
+    cb(canvas.toDataURL('image/jpeg', quality || 0.75));
+  };
+  img.onerror = function(){ cb(dataUrl); };
+  img.src = dataUrl;
+}
+
+
+var qs=function(s){return document.querySelector(s)};
+var qsa=function(s){return document.querySelectorAll(s)};
+
+/* CURSOR */
+var ct=qs('#cur-t'),cd=qs('#cur-d'),mx=0,my=0,tx=0,ty=0;
+document.addEventListener('mousemove',function(e){mx=e.clientX;my=e.clientY;cd.style.left=mx+'px';cd.style.top=my+'px'});
+(function loop(){tx+=(mx-tx)*.1;ty+=(my-ty)*.1;ct.style.left=tx+'px';ct.style.top=ty+'px';requestAnimationFrame(loop)})();
+document.querySelectorAll('button,a,input,select,textarea').forEach(function(el){el.addEventListener('mouseenter',function(){document.body.classList.add('ch')});el.addEventListener('mouseleave',function(){document.body.classList.remove('ch')})});
+
+/* STATE */
+var role=null,loginRole='admin',curClient='sarai',changingId=null,autoPublish=false,curMT='image';
+var metaCreds={igId:'',token:'',imgbbKey:'',cloudinaryCloud:'',cloudinaryPreset:''};
+var pubLog=[];
+
+var clients={
+  sarai:{name:'Floristería Sarai',handle:'@floristeria_sarai',av:'S',pass:'sarai2025',email:'floristeriasarai@gmail.com',phone:'+34 933 79 75 04'},
+  barber:{name:'The Barber 080',handle:'@thebarber080',av:'B',pass:'barber2025',email:'thebarber080@gmail.com',phone:''},
+};
+
+var IMGS=[
+  'https://images.unsplash.com/photo-1487530811015-780f83b3f8d2?w=400&q=80',
+  'https://images.unsplash.com/photo-1461354464878-ad92f492a5a0?w=400&q=80',
+  'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&q=80',
+  'https://images.unsplash.com/photo-1490750967868-88df5691cc5e?w=400&q=80',
+  'https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=400&q=80',
+  'https://images.unsplash.com/photo-1549488344-cbb6c34a8132?w=400&q=80',
+  'https://images.unsplash.com/photo-1501004318641-b39e6451bec6?w=400&q=80',
+  'https://images.unsplash.com/photo-1561181286-d3f36b91d2ff?w=400&q=80',
+  'https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?w=400&q=80',
+];
+var TONES=['warm','neutral','cool','warm','neutral','warm','cool','warm','cool'];
+var BRIS=[.65,.88,.55,.72,.82,.78,.68,.45,.60];
+var COLS=['#E8A080','#F0E8E0','#6A9A60','#D06070','#E8E0D8','#E8C040','#7090C8','#903050','#608050'];
+var CAPS=['Ramo de flor variada · Recién preparado 🌸','Peonías blancas para boda ✨','Eucalipto fresco · Natural 🌿','Rosas del día · El clásico ❤️','Novia boho · Plumones 👰','Girasoles frescos ☀️','Hortensia azul 💙','Dalia granate · Especial 🍷','Verde natural 🌿'];
+var DATES=['Lun 2 Jun · 18:00','Mie 4 Jun · 19:00','Vie 6 Jun · 17:30','Lun 9 Jun · 18:00','Mie 11 Jun · 19:30','Vie 13 Jun · 17:00','Lun 16 Jun · 18:00','Mie 18 Jun · 19:00','Vie 20 Jun · 09:00'];
+var qs=function(s){return document.querySelector(s)};
+var qsa=function(s){return document.querySelectorAll(s)};
+
+/* CURSOR */
+var ct=qs('#cur-t'),cd=qs('#cur-d'),mx=0,my=0,tx=0,ty=0;
+document.addEventListener('mousemove',function(e){mx=e.clientX;my=e.clientY;cd.style.left=mx+'px';cd.style.top=my+'px'});
+(function loop(){tx+=(mx-tx)*.1;ty+=(my-ty)*.1;ct.style.left=tx+'px';ct.style.top=ty+'px';requestAnimationFrame(loop)})();
+document.querySelectorAll('button,a,input,select,textarea').forEach(function(el){el.addEventListener('mouseenter',function(){document.body.classList.add('ch')});el.addEventListener('mouseleave',function(){document.body.classList.remove('ch')})});
+
+/* STATE */
+var role=null,loginRole='admin',curClient='sarai',changingId=null,autoPublish=false,curMT='image';
+var metaCreds={igId:'',token:'',imgbbKey:'',cloudinaryCloud:'',cloudinaryPreset:''};
+var pubLog=[];
+
+var clients={
+  sarai:{name:'Floristería Sarai',handle:'@floristeria_sarai',av:'S',pass:'sarai2025',email:'floristeriasarai@gmail.com',phone:'+34 933 79 75 04'},
+  barber:{name:'The Barber 080',handle:'@thebarber080',av:'B',pass:'barber2025',email:'thebarber080@gmail.com',phone:''},
+};
+
+var IMGS=['https://images.unsplash.com/photo-1487530811015-780f83b3f8d2?w=400&q=80','https://images.unsplash.com/photo-1461354464878-ad92f492a5a0?w=400&q=80','https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&q=80','https://images.unsplash.com/photo-1490750967868-88df5691cc5e?w=400&q=80','https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=400&q=80','https://images.unsplash.com/photo-1549488344-cbb6c34a8132?w=400&q=80','https://images.unsplash.com/photo-1501004318641-b39e6451bec6?w=400&q=80','https://images.unsplash.com/photo-1561181286-d3f36b91d2ff?w=400&q=80','https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?w=400&q=80'];
+var TONES=['warm','neutral','cool','warm','neutral','warm','cool','warm','cool'];
+var BRIS=[.65,.88,.55,.72,.82,.78,.68,.45,.60];
+var COLS=['#E8A080','#F0E8E0','#6A9A60','#D06070','#E8E0D8','#E8C040','#7090C8','#903050','#608050'];
+var CAPS=['Ramo de flor variada 🌸','Peonías para boda ✨','Eucalipto · Natural 🌿','Rosas · El clásico ❤️','Novia boho 👰','Girasoles ☀️','Hortensia azul 💙','Dalia granate 🍷','Verde natural 🌿'];
+var DATES=['Lun 2 Jun · 18:00','Mie 4 Jun · 19:00','Vie 6 Jun · 17:30','Lun 9 Jun · 18:00','Mie 11 Jun · 19:30','Vie 13 Jun · 17:00','Lun 16 Jun · 18:00','Mie 18 Jun · 19:00','Vie 20 Jun · 09:00'];
+var posts={sarai:[],barber:[]};
+posts.sarai=[{id:'s1',url:'https://superb-kleicha-f2522c.netlify.app/Image/Ramo%20variado.jpg',caption:'',date:'Lun 2 Jun · 18:00',tone:'warm',brightness:0.72,color:'#C87050',status:'pending',mediaType:'image'},
+{id:'s2',url:'https://superb-kleicha-f2522c.netlify.app/Image/Planta%20hortensia.jpg',caption:'',date:'Mie 4 Jun · 19:00',tone:'cool',brightness:0.62,color:'#8090B8',status:'pending',mediaType:'image'},
+{id:'s3',url:'https://superb-kleicha-f2522c.netlify.app/Image/Ramo%20novia%20peonias%20y%20rosas%20blancas.jpg',caption:'',date:'Vie 6 Jun · 17:30',tone:'neutral',brightness:0.88,color:'#E8E0D8',status:'approved',mediaType:'image'},
+{id:'s4',url:'https://superb-kleicha-f2522c.netlify.app/Image/Ramo%20girasoles.jpg',caption:'',date:'Lun 9 Jun · 18:00',tone:'warm',brightness:0.82,color:'#E0C040',status:'pending',mediaType:'image'},
+{id:'s5',url:'https://superb-kleicha-f2522c.netlify.app/Image/Planta%20espatifilio.jpg',caption:'',date:'Mie 11 Jun · 19:30',tone:'cool',brightness:0.58,color:'#60A878',status:'pending',mediaType:'image'},
+{id:'s6',url:'https://superb-kleicha-f2522c.netlify.app/Image/Ramo%20tulipanes.jpg',caption:'',date:'Vie 13 Jun · 17:00',tone:'warm',brightness:0.7,color:'#D06880',status:'pending',mediaType:'image'},
+{id:'s7',url:'https://superb-kleicha-f2522c.netlify.app/Image/Planta%20Sanseviera.jpg',caption:'',date:'Lun 16 Jun · 18:00',tone:'cool',brightness:0.55,color:'#508858',status:'pending',mediaType:'image'},
+{id:'s8',url:'https://superb-kleicha-f2522c.netlify.app/Image/Ramo%20eucalipto%20y%20dalias.jpg',caption:'',date:'Mie 18 Jun · 19:00',tone:'warm',brightness:0.68,color:'#C09060',status:'pending',mediaType:'image'},
+{id:'s9',url:'https://superb-kleicha-f2522c.netlify.app/Image/Ramo%20novia%20paniculata.jpg',caption:'',date:'Vie 20 Jun · 09:00',tone:'neutral',brightness:0.78,color:'#A8B0B8',status:'pending',mediaType:'image'}];
+posts.barber=[{id:'b1',url:'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=400&q=80',caption:'El corte perfecto ✂️',date:'Lun 2 Jun · 18:00',tone:'neutral',brightness:.5,color:'#808080',status:'pending',mediaType:'image'},{id:'b2',url:'https://images.unsplash.com/photo-1567894340315-735d7c361db0?w=400&q=80',caption:'Fade ⚡',date:'Mie 4 Jun · 19:00',tone:'cool',brightness:.4,color:'#505060',status:'pending',mediaType:'image'},{id:'b3',url:'https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=400&q=80',caption:'Navaja clásica 🗡️',date:'Vie 6 Jun · 17:30',tone:'neutral',brightness:.45,color:'#604040',status:'pending',mediaType:'image'}];
+
+// Load Firebase state on startup
+initFirebase();
+var PROFILES={
+  sarai:{handle:'floristeria_sarai',name:'Floristería Sarai 🌸',cat:'Florista',followers:901,following:2021,posts:577,avatar:'https://superb-kleicha-f2522c.netlify.app/Image/hero-flowers.jpg'},
+  barber:{handle:'thebarber080',name:'The Barber 080 💈',cat:'Barbería',followers:420,following:180,posts:0,avatar:'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=120&q=80'},
+};
+
+/* UTILS */
+function showScr(id){qsa('.scr').forEach(function(s){s.classList.remove('on')});qs('#'+id).classList.add('on')}
+function showToast(msg,type){var t=qs('#toast');t.textContent=msg;t.className='toast '+(type||'admin');t.classList.add('on');setTimeout(function(){t.classList.remove('on')},3500)}
+function addLog(type,msg){pubLog.unshift({type:type,msg:msg,time:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})});var log=qs('#pubLog');if(qs('#pubLogEmpty'))qs('#pubLogEmpty').style.display='none';log.innerHTML=pubLog.slice(0,20).map(function(e){return'<div class="log-entry"><div class="log-dot log-'+e.type+'"></div><div class="log-msg">'+e.msg+'</div><div class="log-time">'+e.time+'</div></div>'}).join('')}
+
+/* LOGIN */
+function setRole(r,tab){loginRole=r;qsa('.rpill').forEach(function(p){p.classList.remove('on')});tab.classList.add('on')}
+function doLogin(){var u=qs('#lUser').value.trim().toLowerCase(),p=qs('#lPass').value;qs('#loginErr').style.display='none';if(loginRole==='admin'&&u==='admin'&&p==='admin123'){role='admin';showScr('sc-admin');renderAdmin();testApiAvailability();loadState(function(){renderAdmin()});return}for(var k in clients){if(u===k&&p===clients[k].pass){role='client';curClient=k;showScr('sc-client');loadState(function(){renderClient()});return}}qs('#loginErr').style.display='block'}
+function logout(){role=null;qs('#lUser').value='';qs('#lPass').value='';showScr('sc-login')}
+function openReg(){qs('#regOverlay').classList.add('on')}
+function closeReg(){qs('#regOverlay').classList.remove('on')}
+function doRegister(){
+  var nombre=qs('#rNombre').value.trim(),negocio=qs('#rNegocio').value.trim(),email=qs('#rEmail').value.trim(),tel=qs('#rTel').value.trim(),ig=qs('#rIg').value.trim();
+  var user=qs('#rUser').value.trim().toLowerCase().replace(/[^a-z0-9]/g,''),pass=qs('#rPass').value,plan=qs('#rPlan').value;
+  qs('#regErr').style.display='none';
+  if(!nombre||!negocio||!email||!user||!pass){qs('#regErr').style.display='block';return}
+  if(clients[user]){qs('#regErr').textContent='Ese usuario ya existe';qs('#regErr').style.display='block';return}
+  clients[user]={name:negocio,handle:ig||('@'+user),av:negocio[0].toUpperCase(),pass:pass,email:email,phone:tel};
+  posts[user]=[];PROFILES[user]={handle:(ig||('@'+user)).replace('@',''),name:negocio,cat:'Negocio',followers:0,following:0,posts:0,avatar:''};
+  var sel=qs('#clientSelect'),opt=document.createElement('option');opt.value=user;opt.textContent=negocio;sel.appendChild(opt);
+  addLog('ok','Nuevo cliente: '+negocio+' · '+email+(tel?' · '+tel:'')+(plan?' · '+plan:''));
+  showToast('Cuenta creada 📧','success');
+  closeReg();role='client';curClient=user;showScr('sc-client');renderClient();
+}
+
+/* ADMIN */
+function aTab(name,btn){qsa('.nav-tab').forEach(function(b){b.classList.remove('on')});btn.classList.add('on');['queue','calendar','meta','analytics'].forEach(function(t){var el=qs('#tab-'+t);if(el)el.style.display=t===name?'block':'none'});if(name==='calendar')renderCalendar();if(name==='analytics')updateAnalytics()}
+function switchClient(){curClient=qs('#clientSelect').value;renderAdmin()}
+function setMT(type,btn){curMT=type;qsa('.mtype-btn').forEach(function(b){b.classList.remove('on')});btn.classList.add('on');var inp=qs('#fileIn'),icon=qs('#uzIcon'),sub=qs('#uzSub');if(type==='image'){inp.accept='image/*';inp.multiple=true;icon.textContent='↑ Subir fotos al feed';sub.textContent='JPG, PNG · Varias · Drag & drop'}else if(type==='reel'){inp.accept='video/*';inp.multiple=false;icon.textContent='↑ Subir Reel';sub.textContent='MP4 · Vertical 9:16 · Máx 15 min'}else{inp.accept='video/*';inp.multiple=false;icon.textContent='↑ Subir vídeo';sub.textContent='MP4 · Cuadrado o landscape'}}
+
+function renderAdmin(){
+  var ps=posts[curClient]||[];qs('#qMeta').textContent=ps.length+' posts';var grid=qs('#qGrid');grid.innerHTML='';
+  if(!ps.length){grid.innerHTML='<div class="q-empty">Sube fotos o vídeos para empezar</div>';qs('#aiBtn').disabled=true;return}
+  qs('#aiBtn').disabled=false;
+  ps.forEach(function(p,i){
+    var card=document.createElement('div');card.className='qcard';card.style.animationDelay=(i*45)+'ms';
+    var sCls='s-'+(p.status||'pending'),sTxt={pending:'Pendiente',approved:'Aprobado',changes:'Cambios',published:'Publicado'}[p.status||'pending']||p.status;
+    var isV=p.mediaType==='reel'||p.mediaType==='video';
+    var mHtml=isV?'<div class="qcard-video"><video src="'+p.url+'" muted playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover"></video><div class="qcard-video-badge">▶ '+(p.mediaType==='reel'?'Reel':'Vídeo')+'</div></div>':'<div class="qcard-img"><img src="'+p.url+'" alt="" loading="lazy"><div class="qcard-color-bar" style="background:'+(p.color||'#888')+'"></div><div class="qcard-tone-pill tone-'+(p.tone||'neutral')+'">'+ ({warm:'Cálido',cool:'Frío',neutral:'Neutro'}[p.tone||'neutral'])+'</div></div>';
+    card.innerHTML=mHtml+'<div class="qcard-body"><textarea class="qcard-caption" rows="2" placeholder="Generando caption con IA..." data-id="'+p.id+'" onchange="updCap(\''+p.id+'\',this.value)">'+p.caption+'</textarea><input class="qcard-date" type="text" value="'+p.date+'" placeholder="Fecha · Lun 2 Jun · 18:00" onchange="updDate(\''+p.id+'\',this.value)"><div class="qcard-footer"><div class="qcard-status '+sCls+'">'+sTxt+'</div>'+(p.status==='approved'?'<button class="qcard-pub-btn" onclick="publishNow(\''+p.id+'\')">Publicar</button>':'')+'<button class="qcard-del" onclick="delPost(\''+p.id+'\')">✕</button></div>'+(p.changesNote?'<div class="qcard-changes">'+p.changesNote+'</div>':'')+'</div>';
+    grid.appendChild(card);
+  });
+  updateAnalytics();
+}
+
+function getVideoDuration(file,cb){var v=document.createElement('video');v.preload='metadata';v.onloadedmetadata=function(){URL.revokeObjectURL(v.src);cb(Math.round(v.duration))};v.onerror=function(){cb(null)};v.src=URL.createObjectURL(file)}
+function handleUpload(e){
+  var files=Array.from(e.target.files);if(!files.length)return;if(!posts[curClient])posts[curClient]=[];
+  var isV=curMT==='reel'||curMT==='video';
+  if(isV){var f=files[0];var reader=new FileReader();reader.onload=function(ev){var url=ev.target.result;getVideoDuration(f,function(dur){posts[curClient].unshift({id:'v'+Date.now(),url:url,caption:f.name.replace(/\.[^.]+$/,''),date:'',tone:'neutral',brightness:.5,color:'#888',status:'pending',mediaType:curMT,duration:dur});renderAdmin();showToast('Vídeo añadido','success')})};reader.readAsDataURL(f);e.target.value='';return}
+  var loaded=0;files.forEach(function(f,fi){var reader=new FileReader();reader.onload=function(ev){var url=ev.target.result;analyzeColor(url,function(tone,br,color){posts[curClient].unshift({id:'u'+Date.now()+'_'+fi,url:url,caption:f.name.replace(/\.[^.]+$/,''),date:'',tone:tone,brightness:br,color:color,status:'pending',mediaType:'image'});loaded++;if(loaded===files.length){renderAdmin();showToast(files.length+' foto'+(files.length>1?'s':'')+' añadida'+(files.length>1?'s':''),'success')}})};reader.readAsDataURL(f)});e.target.value='';
+}
+function analyzeColor(src,cb){var img=new Image();img.onload=function(){try{var c=document.createElement('canvas');c.width=c.height=16;var ctx=c.getContext('2d');ctx.drawImage(img,0,0,16,16);var d=ctx.getImageData(0,0,16,16).data,r=0,g=0,b=0,n=d.length/4;for(var i=0;i<d.length;i+=4){r+=d[i];g+=d[i+1];b+=d[i+2]}r=Math.round(r/n);g=Math.round(g/n);b=Math.round(b/n);var hex='#'+[r,g,b].map(function(v){return('0'+v.toString(16)).slice(-2)}).join('');var br=(r*.299+g*.587+b*.114)/255;var tone=r>g&&r>b?'warm':b>r&&b>g?'cool':'neutral';cb(tone,br,hex)}catch(e){cb('neutral',.65,'#A0A0A0')}};img.onerror=function(){cb('neutral',.65,'#A0A0A0')};img.src=src}
+function updCap(id,val){(posts[curClient]||[]).forEach(function(p){if(p.id===id)p.caption=val})}
+function updDate(id,val){(posts[curClient]||[]).forEach(function(p){if(p.id===id)p.date=val})}
+function delPost(id){posts[curClient]=(posts[curClient]||[]).filter(function(p){return p.id!==id});saveState();renderAdmin();if(role==='client'){renderPhoneFeed();renderHarmony()}}
+function sendToClient(){var ps=(posts[curClient]||[]).filter(function(p){return p.date});if(!ps.length){showToast('Asigna fechas primero','error');return}saveState();markSent();addLog('ok','Feed enviado a '+clients[curClient].name+' ('+clients[curClient].email+') · '+ps.length+' posts');showToast('Feed enviado · Notificación email 📧','success')}
+function updateAnalytics(){var ps=posts[curClient]||[];qs('#anP').textContent=ps.filter(function(p){return p.status==='pending'}).length;qs('#anA').textContent=ps.filter(function(p){return p.status==='approved'}).length;qs('#anPub').textContent=ps.filter(function(p){return p.status==='published'}).length;qs('#anC').textContent=ps.filter(function(p){return p.status==='changes'}).length}
+
+/* AI — aesthetic */
+async function analyzeAI(){
+  var btn=qs("#aiBtn");btn.disabled=true;btn.classList.add("loading");
+  var SVG="<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M12 2L2 7l10 5 10-5-10-5z\"/><path d=\"M2 17l10 5 10-5\"/><path d=\"M2 12l10 5 10-5\"/></svg>";
+  btn.innerHTML=SVG+" Analizando...";
+  var ps=posts[curClient]||[];
+  var desc=ps.slice(0,9).map(function(p,i){return (i+1)+". Tono:"+(p.tone||"neutral")+" Brillo:"+(p.brightness||.5).toFixed(2)+" Color:"+p.color}).join("\n");
+  try{
+    var res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:600,messages:[{role:"user",content:"Experto en feeds aesthetic de Instagram. Ordena para maxima armonia visual usando patrones: checkerboard (alterna calido/frio), column (misma columna mismo tono), o row (misma fila mismo tono). FOTOS:\n"+desc+"\nResponde SOLO JSON sin markdown:{ordenOptimo:[1,2,3...],score:85,patron:checkerboard,tips:consejo breve}"}]})});
+    var data=await res.json();var txt=data.content[0].text.replace(/```json|```/g,"").trim();var result=JSON.parse(txt);
+    if(result.ordenOptimo){var r=[];result.ordenOptimo.forEach(function(pos){var p=ps[pos-1];if(p)r.push(p)});ps.forEach(function(p){if(!r.find(function(x){return x.id===p.id}))r.push(p)});posts[curClient]=r}
+    renderAdmin();if(role==="client"){renderPhoneFeed()}
+    showToast("Aesthetic · "+result.patron+" · "+result.score+"/100","success");
+  }catch(e){
+    var warm=ps.filter(function(p){return p.tone==="warm"}),cool=ps.filter(function(p){return p.tone==="cool"}),neutral=ps.filter(function(p){return p.tone==="neutral"});
+    var ordered=[],wi=0,ci=0,ni=0,pat=["warm","cool","neutral","warm","neutral","cool","warm","cool","neutral"];
+    for(var j=0;j<ps.length;j++){var t=pat[j%pat.length];if(t==="warm"&&wi<warm.length)ordered.push(warm[wi++]);else if(t==="cool"&&ci<cool.length)ordered.push(cool[ci++]);else if(t==="neutral"&&ni<neutral.length)ordered.push(neutral[ni++]);else if(wi<warm.length)ordered.push(warm[wi++]);else if(ci<cool.length)ordered.push(cool[ci++]);else if(ni<neutral.length)ordered.push(neutral[ni++])}
+    posts[curClient]=ordered;renderAdmin();if(role==="client"){renderPhoneFeed()}
+    showToast("Patron checkerboard aplicado","success");
+  }
+  // Generate captions for posts without one
+  await generateCaptionsForNew();
+  btn.disabled=false;btn.classList.remove("loading");
+  btn.innerHTML=SVG+" Analizar con IA";
+}
+
+/* CALENDAR */
+var calYear=new Date().getFullYear(),calMonth=new Date().getMonth();
+var MONTHS=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+function calNav(dir){calMonth+=dir;if(calMonth>11){calMonth=0;calYear++}if(calMonth<0){calMonth=11;calYear--}renderCalendar()}
+function renderCalendar(){
+  qs('#calMonthTitle').textContent=MONTHS[calMonth]+' '+calYear;var grid=qs('#calGrid');grid.innerHTML='';
+  ['L','M','X','J','V','S','D'].forEach(function(d){var el=document.createElement('div');el.className='cal-dow';el.textContent=d;grid.appendChild(el)});
+  var first=new Date(calYear,calMonth,1).getDay(),days=new Date(calYear,calMonth+1,0).getDate(),offset=(first+6)%7;
+  for(var i=0;i<offset;i++){var el=document.createElement('div');el.className='cal-day empty';grid.appendChild(el)}
+  var ps=posts[curClient]||[],today=new Date();
+  for(var d=1;d<=days;d++){
+    var el=document.createElement('div');el.className='cal-day';
+    if(today.getDate()===d&&today.getMonth()===calMonth&&today.getFullYear()===calYear)el.classList.add('today');
+    var dayPost=ps.find(function(p){return p.date&&p.date.includes(' '+d+' ')});
+    if(dayPost){
+      el.classList.add('has-posts');
+      el.innerHTML='<div class="cal-day-inner"><div class="cal-day-thumb"><img src="'+dayPost.url+'" loading="lazy"></div><span class="cal-day-num">'+d+'</span></div>';
+    }else{
+      el.innerHTML='<div class="cal-day-inner"><span class="cal-day-num">'+d+'</span></div>';
+    }
+    grid.appendChild(el);
+  }
+  var list=qs('#schedList');list.innerHTML='';
+  var sched=ps.filter(function(p){return p.date&&p.status!=='published'});
+  if(!sched.length){list.innerHTML='<div style="padding:1.5rem;text-align:center;color:var(--t3);font-size:.8rem">No hay publicaciones programadas</div>';return}
+  sched.forEach(function(p){var item=document.createElement('div');item.className='sched-item';var isV=p.mediaType==='reel'||p.mediaType==='video';var thumbHtml=isV?'<div style="width:3rem;height:3rem;border-radius:6px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">▶</div>':'<img class="sched-thumb" src="'+p.url+'" alt="" loading="lazy">';item.innerHTML=thumbHtml+'<div class="sched-info"><div class="sched-date">'+p.date+'</div><div class="sched-cap">'+(p.caption||'Sin caption')+'</div></div><button class="sched-pub-btn" '+(p.status!=='approved'?'disabled':'')+' onclick="publishNow(\''+p.id+'\')">'+(p.status==='approved'?'Publicar ya':'Pendiente')+'</button>';list.appendChild(item)});
+}
+
+/* META */
+function saveCreds(){metaCreds.igId=qs('#metaIgId').value.trim();metaCreds.token=qs('#metaToken').value.trim();metaCreds.imgbbKey=qs('#imgbbKey').value.trim();metaCreds.cloudinaryCloud=qs('#cloudinaryCloud').value.trim();metaCreds.cloudinaryPreset=qs('#cloudinaryPreset').value.trim();if(!metaCreds.igId||!metaCreds.token){showToast('Instagram ID y Token son obligatorios','error');return}qs('#metaTestBtn').disabled=false;qs('#metaStep3').classList.add('done');qs('#metaStep3 .meta-step-n').classList.add('done');qs('#metaStep3 .meta-step-n').textContent='✓';showToast('Credenciales guardadas','success');addLog('info','Guardado')}
+async function testMeta(){var btn=qs('#metaTestBtn');btn.disabled=true;btn.textContent='Probando...';addLog('info','Probando...');try{var res=await fetch('https://graph.instagram.com/v22.0/'+metaCreds.igId+'?fields=id,username&access_token='+metaCreds.token);var data=await res.json();if(data.error)throw new Error(data.error.message);qs('#metaStatusPill').textContent='Conectado';qs('#metaStatusPill').className='status-pill connected';['4','5'].forEach(function(n){qs('#metaStep'+n).classList.add('done');qs('#metaStep'+n+' .meta-step-n').classList.add('done');qs('#metaStep'+n+' .meta-step-n').textContent='✓'});addLog('ok','Conectado');showToast('Conectado con Instagram','success')}catch(err){addLog('err','Error: '+err.message);showToast('Error: '+err.message.slice(0,40),'error')}btn.disabled=false;btn.textContent='Probar conexión con Instagram'}
+function toggleAuto(){autoPublish=!autoPublish;qs('#autoToggle').classList.toggle('on',autoPublish);showToast(autoPublish?'Publicación automática activada':'Desactivada','success')}
+async function uploadToImgbb(u){var b=u.split(',')[1];var f=new FormData();f.append('key',metaCreds.imgbbKey);f.append('image',b);var res=await fetch('https://api.imgbb.com/1/upload',{method:'POST',body:f});var data=await res.json();if(!data.success)throw new Error('imgbb: '+data.error.message);return data.data.url}
+async function uploadToCloudinary(u,rt){if(!metaCreds.cloudinaryCloud||!metaCreds.cloudinaryPreset)throw new Error('Configura Cloudinary');var b=u.split(',')[1];var mt=u.split(';')[0].split(':')[1];var bc=atob(b);var ba=new Uint8Array(bc.length);for(var i=0;i<bc.length;i++)ba[i]=bc.charCodeAt(i);var blob=new Blob([ba],{type:mt});var f=new FormData();f.append('file',blob);f.append('upload_preset',metaCreds.cloudinaryPreset);var res=await fetch('https://api.cloudinary.com/v1_1/'+metaCreds.cloudinaryCloud+'/'+rt+'/upload',{method:'POST',body:f});var data=await res.json();if(data.error)throw new Error('Cloudinary: '+data.error.message);return data.secure_url}
+async function createMetaContainer(imageUrl,caption){var res=await fetch('https://graph.instagram.com/v22.0/'+metaCreds.igId+'/media',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image_url:imageUrl,caption:caption,access_token:metaCreds.token})});var data=await res.json();if(data.error)throw new Error(data.error.message);return data.id}
+async function createMetaVideoContainer(videoUrl,caption,mType){var body={caption:caption,access_token:metaCreds.token,video_url:videoUrl};if(mType==='reel'){body.media_type='REELS';body.share_to_feed=true}else{body.media_type='VIDEO'}var res=await fetch('https://graph.instagram.com/v22.0/'+metaCreds.igId+'/media',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});var data=await res.json();if(data.error)throw new Error(data.error.message);return data.id}
+async function pollMetaStatus(id){for(var i=0;i<24;i++){await new Promise(function(r){setTimeout(r,5000)});var res=await fetch('https://graph.instagram.com/v22.0/'+id+'?fields=status_code&access_token='+metaCreds.token);var data=await res.json();if(data.error)throw new Error(data.error.message);addLog('info','Estado: '+data.status_code);if(data.status_code==='FINISHED')return;if(data.status_code==='ERROR')throw new Error('Meta rechazó el vídeo')}throw new Error('Timeout')}
+async function publishMetaContainer(id){var res=await fetch('https://graph.instagram.com/v22.0/'+metaCreds.igId+'/media_publish',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({creation_id:id,access_token:metaCreds.token})});var data=await res.json();if(data.error)throw new Error(data.error.message);return data.id}
+async function publishNow(postId){
+  var ps=posts[curClient]||[];var post=ps.find(function(p){return p.id===postId});if(!post)return;if(!metaCreds.igId||!metaCreds.token){showToast('Configura las credenciales de Meta API','error');return}
+  var isV=post.mediaType==='reel'||post.mediaType==='video';qs('#pubOverlay').classList.add('on');qs('#pubTitle').textContent=isV?'Publicando '+post.mediaType+'...':'Publicando imagen...';
+  try{var publicUrl,creationId,mediaId;if(isV){qs('#pubSub').textContent='Subiendo a Cloudinary...';publicUrl=await uploadToCloudinary(post.url,'video');qs('#pubSub').textContent='Container Meta...';creationId=await createMetaVideoContainer(publicUrl,post.caption,post.mediaType);qs('#pubSub').textContent='Meta procesando...';await pollMetaStatus(creationId);qs('#pubSub').textContent='Publicando...';mediaId=await publishMetaContainer(creationId)}else{if(!metaCreds.imgbbKey)throw new Error('Falta imgbb API Key');qs('#pubSub').textContent='Subiendo a imgbb...';publicUrl=await uploadToImgbb(post.url);qs('#pubSub').textContent='Container Meta...';creationId=await createMetaContainer(publicUrl,post.caption);qs('#pubSub').textContent='Meta procesando...';await new Promise(function(r){setTimeout(r,10000)});qs('#pubSub').textContent='Publicando...';mediaId=await publishMetaContainer(creationId)}
+  addLog('ok','Publicado · ID: '+mediaId);post.status='published';renderAdmin();renderCalendar();updateAnalytics();showToast('Publicado en Instagram ✓','success')}
+  catch(err){addLog('err','Error: '+err.message);showToast('Error: '+err.message.slice(0,60),'error')}
+  qs('#pubOverlay').classList.remove('on');
+}
+
+/* NC MODAL */
+function openNC(){qs('#ncOverlay').classList.add('on')}
+function closeNC(){qs('#ncOverlay').classList.remove('on')}
+function createClient(){
+  var name=qs('#ncName').value.trim(),handle=qs('#ncHandle').value.trim(),email=qs('#ncEmail').value.trim(),phone=qs('#ncPhone').value.trim();
+  var user=qs('#ncUser').value.trim().toLowerCase().replace(/[^a-z0-9]/g,''),pass=qs('#ncPass').value;
+  if(!name||!user||!pass||!email){showToast('Rellena los campos obligatorios','error');return}
+  clients[user]={name:name,handle:handle||('@'+user),av:name[0].toUpperCase(),pass:pass,email:email,phone:phone};
+  posts[user]=[];PROFILES[user]={handle:(handle||('@'+user)).replace('@',''),name:name,cat:'Negocio',followers:0,following:0,posts:0,avatar:''};
+  var sel=qs('#clientSelect'),opt=document.createElement('option');opt.value=user;opt.textContent=name;sel.appendChild(opt);sel.value=user;curClient=user;
+  closeNC();renderAdmin();addLog('ok','Cliente '+name+' creado · '+email+(phone?' · '+phone:''));showToast('Cliente '+name+' creado 📧','success');
+}
+
+/* ══ AESTHETIC HARMONY ══ */
+function calcHarmony(){
+  var ps=(posts[curClient]||[]).slice(0,9);
+  if(!ps.length)return{score:0,note:'Sube fotos para analizar el aesthetic.',pattern:'—',colors:[]};
+  var colors=[];ps.forEach(function(p){if(p.color&&colors.indexOf(p.color)===-1)colors.push(p.color)});
+  var tones=ps.map(function(p){return p.tone||'neutral'});
+  // Detect pattern
+  var isChecker=ps.length>2&&tones.every(function(t,i){return i===0||t!==tones[i-1]});
+  var isColumn=ps.length>=9&&tones[0]===tones[3]&&tones[3]===tones[6];
+  var isRow=ps.length>=6&&tones[0]===tones[1]&&tones[1]===tones[2];
+  var pattern=isChecker?'Checkerboard ✦':isColumn?'Column pattern':isRow?'Row pattern':'Fluido';
+  // Score
+  var uniqueInRows=0;for(var r=0;r<3;r++){var row=tones.slice(r*3,r*3+3);uniqueInRows+=[...new Set(row)].length}
+  var bright=ps.map(function(p){return p.brightness||.5});var bRange=Math.max.apply(null,bright)-Math.min.apply(null,bright);
+  var consec=0;for(var i=0;i<ps.length-1;i++)if(tones[i]===tones[i+1])consec++;
+  var score=Math.min(98,Math.max(42,Math.round((uniqueInRows/9)*35+(Math.min(1,bRange/.4))*25+Math.max(0,(8-consec)/8)*40)));
+  var note=score>85?'Feed aesthetic · Ritmo de color excelente 🌸':score>70?'Buen equilibrio tonal · El feed fluye':score>55?'Considera reordenar para mejorar el patrón':'Arrastra en el móvil para crear un patrón aesthetic';
+  return{score:score,note:note,pattern:pattern,colors:colors.slice(0,6)};
+}
+
+function renderHarmony(){
+  var h=calcHarmony();
+  var scoreEl=qs('#hwScore'),noteEl=qs('#hwNote'),fillEl=qs('#hwFill'),patEl=qs('#hwPatternName');
+  if(!scoreEl)return;
+  scoreEl.textContent=h.score;if(noteEl)noteEl.textContent=h.note;if(fillEl)fillEl.style.width=h.score+'%';if(patEl)patEl.textContent=h.pattern;
+  // Palette
+  var palette=qs('#hwPalette');if(palette){palette.innerHTML='';if(h.colors.length){h.colors.forEach(function(c){var s=document.createElement('div');s.className='hw-swatch';s.style.background=c;palette.appendChild(s)})}else{palette.innerHTML='<div style="font-family:DM Mono,monospace;font-size:.52rem;color:var(--t3);padding:.3rem .5rem">Paleta disponible al subir fotos</div>'}}
+  // Pattern mini-grid
+  var grid=qs('#hwGrid');if(grid){grid.innerHTML='';var ps=(posts[curClient]||[]).slice(0,9);for(var i=0;i<9;i++){var cell=document.createElement('div');cell.className='hw-cell';var p=ps[i];cell.style.background=p?p.color:'var(--bg3)';cell.style.opacity=p?'1':'.25';grid.appendChild(cell)}}
+}
+
+/* ══ PHONE FEED — drag inside phone ══ */
+var phoneDragSrc=null;
+function renderPhoneFeed(){
+  var grid=qs('#phoneFeedGrid');if(!grid)return;grid.innerHTML='';
+  var ps=(posts[curClient]||[]).slice(0,9);
+  for(var i=0;i<9;i++){
+    var cell=document.createElement('div');var p=ps[i];
+    if(p){
+      cell.className='phone-cell';cell.dataset.id=p.id;
+      var isV=p.mediaType==='reel'||p.mediaType==='video';
+      if(isV){cell.innerHTML='<video src="'+p.url+'" muted playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover"></video><div class="phone-cell-video-badge">▶</div>'}
+      else{var img=document.createElement('img');img.src=p.url;img.alt='';img.loading='lazy';cell.appendChild(img)}
+      cell.draggable=true;
+      (function(pid,cel){
+        cel.addEventListener('dragstart',function(e){phoneDragSrc=cel;cel.style.opacity='.4';e.dataTransfer.setData('text/plain',pid)});
+        cel.addEventListener('dragover',function(e){e.preventDefault();cel.classList.add('phone-drag-over')});
+        cel.addEventListener('dragleave',function(){cel.classList.remove('phone-drag-over')});
+        cel.addEventListener('drop',function(e){e.preventDefault();cel.classList.remove('phone-drag-over');if(phoneDragSrc&&phoneDragSrc!==cel)phoneSwap(phoneDragSrc.dataset.id,pid)});
+        cel.addEventListener('dragend',function(){cel.style.opacity='';qsa('.phone-cell').forEach(function(c){c.classList.remove('phone-drag-over')})});
+      })(p.id,cell);
+      addPhoneTouch(cell,p.id);
+    }else{cell.className='phone-cell phone-cell-empty'}
+    grid.appendChild(cell);
+  }
+  var statEl=qs('#phoneStatPosts');if(statEl)statEl.textContent=curClient==='sarai'?Math.max(577,ps.length):ps.length;
+}
+
+function phoneSwap(aId,bId){
+  var ps=posts[curClient]||[];var ai=ps.findIndex(function(p){return p.id===aId}),bi=ps.findIndex(function(p){return p.id===bId});
+  if(ai===-1||bi===-1)return;var tmp=ps[ai];ps[ai]=ps[bi];ps[bi]=tmp;saveState();
+  renderPhoneFeed();renderClientList();
+}
+
+function addPhoneTouch(el,pid){
+  var clone;
+  el.addEventListener('touchstart',function(e){
+    var t=e.touches[0];
+    clone=el.cloneNode(true);
+    clone.style.cssText='position:fixed;width:'+el.offsetWidth+'px;height:'+el.offsetHeight+'px;opacity:.65;pointer-events:none;z-index:9999;left:'+(t.clientX-el.offsetWidth/2)+'px;top:'+(t.clientY-el.offsetHeight/2)+'px;border-radius:2px;box-shadow:0 8px 24px rgba(0,0,0,.5)';
+    document.body.appendChild(clone);el.style.opacity='.3';
+  },{passive:true});
+  el.addEventListener('touchmove',function(e){
+    if(!clone)return;e.preventDefault();var t=e.touches[0];
+    clone.style.left=(t.clientX-el.offsetWidth/2)+'px';clone.style.top=(t.clientY-el.offsetHeight/2)+'px';
+    clone.style.display='none';var target=document.elementFromPoint(t.clientX,t.clientY);clone.style.display='';
+    qsa('.phone-cell').forEach(function(c){c.classList.remove('phone-drag-over')});
+    var pe=target&&target.closest('.phone-cell');if(pe&&pe!==el&&!pe.classList.contains('phone-cell-empty'))pe.classList.add('phone-drag-over');
+  },{passive:false});
+  el.addEventListener('touchend',function(e){
+    if(!clone)return;var t=e.changedTouches[0];clone.remove();clone=null;el.style.opacity='';
+    qsa('.phone-cell').forEach(function(c){c.classList.remove('phone-drag-over')});
+    var target=document.elementFromPoint(t.clientX,t.clientY);
+    var pe=target&&target.closest('.phone-cell');
+    if(pe&&pe.dataset.id&&pe.dataset.id!==pid&&!pe.classList.contains('phone-cell-empty'))phoneSwap(pid,pe.dataset.id);
+  });
+}
+
+/* ══ CLIENT VIEW ══ */
+function renderClient(){
+  var cl=clients[curClient];var prof=PROFILES[curClient]||{};
+  qs('#cLabel').textContent=cl.name;qs('#cAv').textContent=cl.av;qs('#cHandle').textContent=cl.handle;
+  var months=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  qs('#cMonth').textContent=months[new Date().getMonth()]+' '+new Date().getFullYear();
+  var phoneHandle=qs('#phoneHandle');if(phoneHandle)phoneHandle.textContent=prof.handle||cl.handle.replace('@','');
+  var phoneBioName=qs('#phoneBioName');if(phoneBioName)phoneBioName.textContent=prof.name||cl.name;
+  var phoneAvImg=qs('#phoneAvImg');if(phoneAvImg&&prof.avatar)phoneAvImg.src=prof.avatar;
+  var statPosts=qs('#phoneStatPosts');if(statPosts)statPosts.textContent=curClient==='sarai'?'577':String((posts[curClient]||[]).length);
+  renderPhoneFeed();renderClientList();updateApproveBtn();qs('#cSuccess').classList.remove('on');
+  // Show feed tab by default, hide others
+  var calWrap=qs('#cCalWrap');if(calWrap)calWrap.style.display='none';
+  var dash=qs('#cDashboard');if(dash)dash.style.display='none';
+  var tabFeed=qs('#cTabFeed');if(tabFeed)tabFeed.style.display='block';
+  qsa('.c-nav-tab').forEach(function(b){b.classList.remove('on')});
+  var firstTab=qs('.c-nav-tab');if(firstTab)firstTab.classList.add('on');
+}
+
+var listDragSrc=null;
+function renderClientList(){
+  var list=qs('#cPosts');list.innerHTML='';var ps=posts[curClient]||[];
+  if(!ps.length){list.innerHTML='<div style="padding:1.5rem;text-align:center;color:var(--t3);font-size:.8rem;border:1.5px dashed var(--line);border-radius:8px;grid-column:1/-1">No hay publicaciones para revisar</div>';return}
+  ps.forEach(function(p,i){
+    var card=document.createElement('div');
+    var isDone=p.status==='approved'||p.status==='published';
+    var isV=p.mediaType==='reel'||p.mediaType==='video';
+    card.className='c-post-card'+(p.status==='approved'?' is-approved':p.status==='changes'?' is-changes':'');
+    card.style.animationDelay=(i*30)+'ms';
+    card.dataset.id=p.id;
+    card.draggable=true;
+    var mediaHtml=isV?'<div class="c-card-img"><video src="'+p.url+'" muted playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover"></video></div>':'<div class="c-card-img"><img src="'+p.url+'" alt="" loading="lazy"></div>';
+    card.innerHTML=mediaHtml+
+      '<div class="c-card-overlay">'+
+        (p.changesNote?'<div class="c-card-changes-note">'+p.changesNote+'</div>':'')+
+        '<div class="c-card-caption">'+(p.caption||'Sin caption')+'</div>'+
+        '<div class="c-card-actions">'+
+          '<button class="c-card-btn-ok'+(isDone?' done':'')+'" onclick="approvePost(\''+p.id+'\',this)">'+(isDone?'✓':'Aprobar')+'</button>'+
+          (!isDone?'<button class="c-card-btn-change" onclick="openChanges(\''+p.id+'\')">✎</button>':'')+
+        '</div>'+
+      '</div>';
+    card.addEventListener('dragstart',function(e){listDragSrc=card;card.style.opacity='.4';e.dataTransfer.setData('text/plain',p.id)});
+    card.addEventListener('dragover',function(e){e.preventDefault();card.style.outline='2px solid var(--gold)'});
+    card.addEventListener('dragleave',function(){card.style.outline=''});
+    card.addEventListener('drop',function(e){e.preventDefault();card.style.outline='';if(listDragSrc&&listDragSrc!==card)phoneSwap(listDragSrc.dataset.id,p.id)});
+    card.addEventListener('dragend',function(){card.style.opacity='';card.style.outline='';listDragSrc=null});
+    addListTouch(card,p.id);
+    list.appendChild(card);
+  });
+}
+function addListTouch(el,pid){
+  var clone;
+  el.addEventListener('touchstart',function(e){
+    var t=e.touches[0];clone=el.cloneNode(true);
+    clone.style.cssText='position:fixed;width:'+el.offsetWidth+'px;height:'+el.offsetHeight+'px;opacity:.65;pointer-events:none;z-index:9999;left:'+(t.clientX-el.offsetWidth/2)+'px;top:'+(t.clientY-el.offsetHeight/2)+'px;border-radius:4px;box-shadow:0 8px 24px rgba(0,0,0,.5)';
+    document.body.appendChild(clone);el.style.opacity='.3';
+  },{passive:true});
+  el.addEventListener('touchmove',function(e){
+    if(!clone)return;e.preventDefault();var t=e.touches[0];
+    clone.style.left=(t.clientX-el.offsetWidth/2)+'px';clone.style.top=(t.clientY-el.offsetHeight/2)+'px';
+    clone.style.display='none';var target=document.elementFromPoint(t.clientX,t.clientY);clone.style.display='';
+    qsa('.c-post-card').forEach(function(c){c.style.outline=''});
+    var pe=target&&target.closest('.c-post-card');if(pe&&pe!==el)pe.style.outline='2px solid var(--gold)';
+  },{passive:false});
+  el.addEventListener('touchend',function(e){
+    if(!clone)return;var t=e.changedTouches[0];clone.remove();clone=null;el.style.opacity='';
+    qsa('.c-post-card').forEach(function(c){c.style.outline=''});
+    var target=document.elementFromPoint(t.clientX,t.clientY);
+    var pe=target&&target.closest('.c-post-card');
+    if(pe&&pe.dataset.id&&pe.dataset.id!==pid)phoneSwap(pid,pe.dataset.id);
+  });
+}
+function approvePost(id,btn){
+  (posts[curClient]||[]).forEach(function(p){if(p.id===id){p.status='approved';p.changesNote=null}});saveState();
+  btn.textContent='✓ Aprobada';btn.className='c-btn-ok done';var sib=btn.nextElementSibling;if(sib)sib.remove();
+  var card=btn.closest('.c-post-card');if(card){card.classList.remove('is-changes');card.classList.add('is-approved')}
+  updateApproveBtn();
+}
+function approveAll(){
+  var ps=posts[curClient]||[];ps.filter(function(p){return p.status==='pending'}).forEach(function(p){p.status='approved'});saveState();
+  renderClientList();updateApproveBtn();
+  if(!ps.filter(function(p){return p.status==='pending'}).length&&ps.length)qs('#cSuccess').classList.add('on');
+}
+function updateApproveBtn(){
+  var ps=posts[curClient]||[];var total=ps.length,approved=ps.filter(function(p){return p.status==='approved'||p.status==='published'}).length,pending=ps.filter(function(p){return p.status==='pending'}).length;
+  qs('#cApproveNote').textContent=approved+' de '+total+' aprobadas';var btn=qs('#cApproveAll');
+  if(!pending&&approved>0){btn.textContent='Todo aprobado ✓';btn.className='c-approve-all partial'}else{btn.textContent='Aprobar todas las publicaciones';btn.className='c-approve-all'}
+}
+function openChanges(id){changingId=id;qs('#chText').value='';qs('#chOverlay').classList.add('on')}
+function closeChanges(){qs('#chOverlay').classList.remove('on');changingId=null}
+function submitChanges(){
+  var note=qs('#chText').value.trim();if(!note){qs('#chText').focus();return}
+  (posts[curClient]||[]).forEach(function(p){if(p.id===changingId){p.status='changes';p.changesNote=note}});saveState();
+  closeChanges();renderClientList();updateApproveBtn();if(role==='admin')renderAdmin();showToast('Cambios enviados al gestor','admin');
+}
+
+
+/* ══ GENERATE CAPTIONS WITH AI ══ */
+async function generateCaptionsForNew(){
+  var ps=posts[curClient]||[];
+  var toGenerate=ps.filter(function(p){return !p.caption||p.caption.trim()===""||p.caption==="Sin caption"});
+  if(!toGenerate.length){showToast("Todos los posts ya tienen caption","admin");return}
+  showToast("Analizando "+toGenerate.length+" imagenes con IA...","admin");
+  var bizType=curClient==="sarai"?"floristeria artesanal en Barcelona. Tienda de confianza desde 1988":"barberia profesional en Barcelona";
+  for(var i=0;i<toGenerate.length;i++){
+    var p=toGenerate[i];
+    var caption="";
+    // Build message: send the actual image so Claude can SEE it
+    var msgContent=[];
+    if(p.url&&p.url.startsWith("data:image")){
+      // Resize to max 256px before sending (works on mobile too)
+      await new Promise(function(resolve){
+        makeThumbnail(p.url, 256, 0.8, function(thumb){
+          var parts=thumb.split(",");
+          var mimeMatch=parts[0].match(/data:(image\/[^;]+)/);
+          var mime=mimeMatch?mimeMatch[1]:"image/jpeg";
+          msgContent.push({type:"image",source:{type:"base64",media_type:mime,data:parts[1]}});
+          resolve();
+        });
+      });
+    }
+    msgContent.push({
+      type:"text",
+      text:"Eres el community manager de una "+bizType+". Mira esta imagen y escribe el caption de Instagram. INSTRUCCIONES: 1) Describe lo que ves de forma poetica y atractiva en espanol (1-2 frases con emojis). 2) Linea en blanco. 3) Exactamente 10-12 hashtags relevantes mezclando espanol e ingles (#floristeria #flowers #barcelona etc). NO uses el mismo texto que otras veces — se creativo y especifico a esta imagen. Devuelve SOLO el caption, sin explicaciones."
+    });
+    try{
+      var res=await fetch("https://api.anthropic.com/v1/messages",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          model:"claude-sonnet-4-20250514",
+          max_tokens:300,
+          messages:[{role:"user",content:msgContent}]
+        })
+      });
+      var raw=await res.text();
+      var data;
+      try{data=JSON.parse(raw)}catch(pe){console.warn("JSON parse:",raw.slice(0,150));data=null}
+      if(data&&res.ok&&data.content&&data.content[0]&&data.content[0].text){
+        caption=data.content[0].text.trim();
+      }else{
+        console.warn("API issue ("+res.status+"):",raw.slice(0,200));
+        // Fallback: text-only request (no image)
+        caption=await generateCaptionTextOnly(p,bizType);
+      }
+    }catch(e){
+      console.warn("Fetch error:",e.message);
+      caption=await generateCaptionTextOnly(p,bizType);
+    }
+    if(caption){
+      p.caption=caption;
+      var ta=document.querySelector("textarea[data-id=\""+p.id+"\"]");
+      if(ta)ta.value=caption;
+      // Live update: re-render just this card caption in client view
+      if(role==="client"){
+        var overlay=document.querySelector(".c-post-card[data-id=\""+p.id+"\"] .c-card-caption");
+        if(overlay)overlay.textContent=caption;
+      }
+    }
+    if(i<toGenerate.length-1)await new Promise(function(r){setTimeout(r,900)})
+  }
+  saveState();
+  renderAdmin();
+  if(role==="client")renderClientList();
+  showToast(toGenerate.length+" caption"+(toGenerate.length>1?"s":"")+" generados con IA","success")
+}
+
+async function generateCaptionTextOnly(p,bizType){
+  // Fallback: describe based on color tone + random seed for variety
+  var seed=Date.now()+Math.random();
+  var toneHints={
+    warm:"flores de colores calidos (rosas, naranja, amarillo, rojo) o ramo vibrante",
+    cool:"flores en tonos suaves (azul, lila, blanco, malva) o planta verde fresca",
+    neutral:"composicion floral natural (verde, blanco, beige) o planta de interior"
+  };
+  var hint=toneHints[p.tone||"neutral"];
+  var prompt="Eres community manager de una "+bizType+". Imagina una foto de "+hint+". Escribe un caption UNICO y CREATIVO para Instagram (seed variedad: "+Math.floor(seed%1000)+"). FORMATO: 1-2 frases poeticas en espanol con emojis, salto de linea, 10-12 hashtags en espanol e ingles. Solo el texto.";
+  try{
+    var res=await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:250,messages:[{role:"user",content:prompt}]})
+    });
+    var raw=await res.text();
+    var data=JSON.parse(raw);
+    if(res.ok&&data.content&&data.content[0]&&data.content[0].text)return data.content[0].text.trim();
+  }catch(e){console.warn("Fallback error:",e.message)}
+  return getCaptionFallback(p.tone);
+}
+/* ══ CLIENT TABS ══ */
+function cTab(name,btn){
+  qsa('.c-nav-tab').forEach(function(b){b.classList.remove('on')});
+  btn.classList.add('on');
+  qs('#cTabFeed').style.display=name==='feed'?'block':'none';
+  var calWrap=qs('#cCalWrap');if(calWrap)calWrap.style.display=name==='calendar'?'block':'none';
+  var dash=qs('#cDashboard');if(dash)dash.style.display=name==='stats'?'block':'none';
+  if(name==='calendar')renderClientCalendar();
+  if(name==='stats')renderClientDashboard();
+}
+
+/* ══ CLIENT CALENDAR ══ */
+function renderClientCalendar(){
+  var dows=qs('#cCalDows'),grid=qs('#cCalGrid'),title=qs('#cCalTitle');
+  if(!dows||!grid)return;
+  var now=new Date();
+  if(title)title.textContent=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'][now.getMonth()]+' '+now.getFullYear();
+  dows.innerHTML='';['L','M','X','J','V','S','D'].forEach(function(d){var el=document.createElement('div');el.className='c-cal-dow';el.textContent=d;dows.appendChild(el)});
+  grid.innerHTML='';
+  var first=new Date(now.getFullYear(),now.getMonth(),1).getDay();
+  var days=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
+  var offset=(first+6)%7;
+  var ps=posts[curClient]||[];
+  for(var i=0;i<offset;i++){var el=document.createElement('div');el.className='cal-day empty';el.innerHTML='<div class="cal-day-inner"><span class="cal-day-num"></span></div>';grid.appendChild(el)}
+  for(var d=1;d<=days;d++){
+    var el=document.createElement('div');el.className='cal-day';
+    if(now.getDate()===d)el.classList.add('today');
+    var dayPost=ps.find(function(p){return p.date&&p.date.includes(' '+d+' ')});
+    if(dayPost){
+      el.classList.add('has-posts');
+      el.innerHTML='<div class="cal-day-inner"><div class="cal-day-thumb"><img src="'+dayPost.url+'" loading="lazy"></div><span class="cal-day-num">'+d+'</span></div>';
+    }else{
+      el.innerHTML='<div class="cal-day-inner"><span class="cal-day-num" style="color:var(--t3)">'+d+'</span></div>';
+    }
+    grid.appendChild(el);
+  }
+}
+
+/* ══ CLIENT DASHBOARD — Instagram metrics ══ */
+function renderClientDashboard(){
+  var dash=qs('#cDashboard');if(!dash)return;
+  var statsEl=qs('#cDashStats');if(!statsEl)return;
+  var ps=posts[curClient]||[];
+  var published=ps.filter(function(p){return p.status==='published'}).length;
+  var approved=ps.filter(function(p){return p.status==='approved'}).length;
+  var pending=ps.filter(function(p){return p.status==='pending'}).length;
+  var prof=PROFILES[curClient]||{};
+  // Stats cards
+  var metrics=[
+    {label:'Seguidores',value:prof.followers||'—',sub:'Instagram'},
+    {label:'Siguiendo',value:prof.following||'—',sub:'Instagram'},
+    {label:'Publicadas',value:published,sub:'Este mes'},
+    {label:'Aprobadas',value:approved,sub:'Pendientes: '+pending},
+    {label:'Posts totales',value:prof.posts||'—',sub:'En tu perfil'},
+    {label:'Tasa aprobación',value:ps.length?Math.round((approved/ps.length)*100)+'%':'—',sub:'Del feed propuesto'},
+  ];
+  statsEl.innerHTML=metrics.map(function(m){
+    return '<div style="background:var(--glass);border:1px solid var(--line2);border-radius:8px;padding:.9rem 1rem;text-align:center">'+
+      '<div style="font-family:\'Cormorant\',serif;font-size:1.6rem;font-weight:300;color:var(--gold);line-height:1;margin-bottom:.25rem">'+m.value+'</div>'+
+      '<div style="font-family:\'DM Mono\',monospace;font-size:.54rem;letter-spacing:.12em;text-transform:uppercase;color:var(--t3)">'+m.label+'</div>'+
+      '<div style="font-size:.65rem;color:var(--t4);margin-top:.15rem">'+m.sub+'</div>'+
+    '</div>';
+  }).join('');
+  // If we have API credentials, try to fetch real metrics
+  if(metaCreds.token&&metaCreds.igId){
+    fetch('https://graph.instagram.com/v22.0/'+metaCreds.igId+'?fields=followers_count,media_count,biography&access_token='+metaCreds.token)
+    .then(function(r){return r.json()})
+    .then(function(data){
+      if(!data.error){
+        var metrics2=[
+          {label:'Seguidores',value:data.followers_count||prof.followers||'—',sub:'Instagram real'},
+          {label:'Publicaciones',value:data.media_count||prof.posts||'—',sub:'Total en perfil'},
+          {label:'Publicadas mes',value:published,sub:'Con este feed'},
+          {label:'Aprobadas',value:approved,sub:'Pendientes: '+pending},
+          {label:'Engagement',value:'—',sub:'Con API Business'},
+          {label:'Alcance',value:'—',sub:'Con API Business'},
+        ];
+        statsEl.innerHTML=metrics2.map(function(m){
+          return '<div style="background:var(--glass);border:1px solid var(--line2);border-radius:8px;padding:.9rem 1rem;text-align:center">'+
+            '<div style="font-family:\'Cormorant\',serif;font-size:1.6rem;font-weight:300;color:var(--gold);line-height:1;margin-bottom:.25rem">'+m.value+'</div>'+
+            '<div style="font-family:\'DM Mono\',monospace;font-size:.54rem;letter-spacing:.12em;text-transform:uppercase;color:var(--t3)">'+m.label+'</div>'+
+            '<div style="font-size:.65rem;color:var(--t4);margin-top:.15rem">'+m.sub+'</div>'+
+          '</div>';
+        }).join('');
+        qs('#cDashboard').querySelector('[style*="Conecta"]').textContent='Datos en tiempo real de Instagram Business';
+      }
+    }).catch(function(){});
+  }
+}
+
+/* ══ UPDATED CALENDAR — admin, with images ══ */
+
+/* ── CAPTION FALLBACK (rule-based, no API needed) ── */
+var CAPTION_TEMPLATES = {
+  warm: [
+    "Cada pétalo, una caricia. Cada ramo, una historia 🌹\nCreado a mano con amor para hacer especial tu momento.\n\n#floristeria #flores #barcelona #ramos #flowers #florista #bouquet #amor #ElPrat #floral #handmade #love",
+    "El color de la alegría hecho flor 🌺\nPorque hay días que merecen un ramo tan especial como tú.\n\n#flores #ramos #floristeria #barcelona #bouquet #flowers #colores #florista #ElPrat #nature #vibrant #gift",
+    "Cuando la pasión toma forma de flor 🌸\nArte floral pensado para emocionar en cada ocasión.\n\n#floristeria #flowers #ramos #barcelona #arte #floral #florista #bouquet #ElPrat #passion #bloom #handcraft",
+    "El lenguaje universal de las flores 💐\nElegimos cada tallo con cuidado para que tu mensaje llegue sin palabras.\n\n#flores #floristeria #barcelona #ramos #bouquet #florista #flowers #ElPrat #gift #naturaleza #love #special",
+    "Colores que abrazan, aromas que enamoran 🌷\nNuestros ramos nacen de manos expertas y corazón florista.\n\n#ramos #floristeria #barcelona #flores #florista #flowers #bouquet #ElPrat #aroma #color #nature #bloom"
+  ],
+  cool: [
+    "La serenidad también tiene forma de flor 🤍\nTonos suaves para momentos que piden calma y belleza.\n\n#floristeria #flores #barcelona #ramos #flowers #elegant #florista #bouquet #ElPrat #white #serenity #floral",
+    "Delicadeza en cada detalle, elegancia en cada tono 💙\nFlores que hablan bajito pero dicen todo.\n\n#flores #ramos #barcelona #floristeria #bouquet #flowers #calm #florista #ElPrat #blue #delicate #wedding",
+    "Lo mejor a veces llega en los tonos más suaves 🌿\nRamos únicos para quienes aprecian la belleza sin estridencias.\n\n#floristeria #flowers #barcelona #ramos #bouquet #florista #soft #elegance #ElPrat #nature #floral #pure",
+    "Pureza, frescura y una pizca de magia floral 🪻\nCada composición, una obra de arte efímera y perfecta.\n\n#flores #ramos #floristeria #barcelona #lavanda #bouquet #flowers #florista #ElPrat #arte #magic #bloom",
+    "El blanco de las flores nunca es vacío 🌼\nEs el color de los momentos perfectos y los comienzos nuevos.\n\n#floristeria #flores #barcelona #ramos #flowers #white #florista #bouquet #ElPrat #boda #wedding #pure"
+  ],
+  neutral: [
+    "Verde que te quiero verde 🌿\nUna planta que transforma tu espacio y tu energía.\n\n#plantas #floristeria #barcelona #nature #green #florista #planta #hogar #interior #naturaleza #ElPrat #urban",
+    "La naturaleza en tu rincón favorito 🌱\nPlanta seleccionada con cuidado para vivir años contigo.\n\n#plantas #flores #barcelona #floristeria #hogar #nature #green #florista #interior #planta #care #home",
+    "Un toque de vida para tu espacio 🪴\nBienestar, oxígeno y belleza natural en una sola planta.\n\n#plantas #barcelona #floristeria #nature #green #florista #hogar #flores #interior #planta #oxygen #ElPrat",
+    "Porque los espacios con plantas son espacios felices 🌾\nCuida tu planta y ella cuidará de ti.\n\n#plantas #floristeria #barcelona #nature #green #florista #hogar #urban #interior #ElPrat #zen #plantlover",
+    "La calma que da lo natural, lo vivo, lo verde 🌿\nAdoptar una planta es adoptar un pedacito de naturaleza.\n\n#plantas #flores #barcelona #floristeria #nature #green #florista #hogar #interior #planta #ElPrat #vida"
+  ]
+};
+
+function getCaptionFallback(tone){
+  var templates=CAPTION_TEMPLATES[tone||"neutral"]||CAPTION_TEMPLATES.neutral;
+  // Pick randomly but avoid repeats using timestamp
+  var idx=Math.floor((Date.now()/1000+Math.random()*100))%templates.length;
+  return templates[idx];
+}
+
+/* ── TEST API AVAILABILITY ── */
+var apiAvailable=null;
+async function testApiAvailability(){
+  try{
+    var res=await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:10,messages:[{role:"user",content:"Di hola"}]})
+    });
+    var raw=await res.text();
+    var data=JSON.parse(raw);
+    apiAvailable=!!(data.content&&data.content[0]&&data.content[0].text);
+    console.log("API test:",apiAvailable?"available":"unavailable",raw.slice(0,100));
+  }catch(e){
+    apiAvailable=false;
+    console.log("API not available:",e.message);
+  }
+}
+
+/* Upload zone drag */
+var uz=qs('#uploadZone');
+if(uz){uz.addEventListener('dragover',function(e){e.preventDefault();uz.classList.add('drag')});uz.addEventListener('dragleave',function(){uz.classList.remove('drag')});uz.addEventListener('drop',function(e){e.preventDefault();uz.classList.remove('drag');var dt=e.dataTransfer;if(dt&&dt.files)handleUpload({target:{files:dt.files,value:''}})});}
+
+</script>
+</body>
+</html>
