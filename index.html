@@ -485,12 +485,13 @@ body.cc #cur-t{transform:translate(-50%,-50%) scale(.88)}
 /* ── APPROVAL GRID ── */
 .c-card-img{position:absolute;inset:0}
 .c-card-img img,.c-card-img video{width:100%;height:100%;object-fit:cover;display:block}
-.c-card-overlay{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:.8rem .75rem;background:linear-gradient(to top,rgba(10,8,6,.97) 0%,rgba(10,8,6,.82) 45%,rgba(10,8,6,.3) 70%,transparent 88%);transition:all 200ms;border:2px solid transparent}
+.c-card-overlay{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:.8rem .7rem;background:linear-gradient(to top,rgba(0,0,0,.93) 0%,rgba(0,0,0,.75) 40%,rgba(0,0,0,.2) 68%,transparent 88%);transition:all 200ms;border:2px solid transparent}
 .c-card-status-pill{font-family:'DM Mono',monospace;font-size:.45rem;letter-spacing:.1em;text-transform:uppercase;padding:.18rem .4rem;border-radius:3px;display:inline-flex;align-items:center;gap:.25rem;margin-bottom:.25rem;align-self:flex-start}
-.c-card-caption{font-size:.72rem;color:rgba(237,232,223,.96);font-weight:300;line-height:1.45;overflow:hidden;margin-bottom:.5rem;max-height:5.5rem}
+.c-card-caption{font-size:.75rem;color:#FFFFFF;font-weight:400;line-height:1.5;margin-bottom:.55rem;word-break:break-word;text-shadow:0 1px 3px rgba(0,0,0,.8)}
+.c-card-text-panel{background:rgba(10,8,6,.96);padding:.65rem .7rem .5rem;border-top:1px solid rgba(201,168,76,.15)}
 .c-card-actions{display:flex;gap:.25rem}
 .c-card-btn-ok{background:var(--grad-gold);color:var(--bg);border:none;font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;padding:.45rem .8rem;border-radius:4px;cursor:auto;transition:all 140ms;white-space:nowrap;flex:1}
-.c-card-btn-ok.done{background:var(--greenL);color:var(--green);border:1px solid var(--greenB)}
+.c-card-btn-ok.done{background:rgba(74,222,128,.25);color:#4ADE80;border:1px solid rgba(74,222,128,.5)}
 .c-card-btn-change{background:rgba(237,232,223,.12);color:var(--t2);border:1px solid var(--line2);font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;padding:.45rem .65rem;border-radius:4px;cursor:auto;transition:all 140ms;white-space:nowrap}
 .c-card-btn-change:hover{color:var(--rose);border-color:var(--roseB)}
 .c-card-changes-note{font-size:.55rem;color:var(--rose);background:var(--roseL);border-radius:3px;padding:.2rem .35rem;margin-bottom:.25rem;line-height:1.3}
@@ -951,31 +952,57 @@ function loadState(cb){
   fetch(FIREBASE_URL + FIREBASE_PATH + ".json")
   .then(function(r){ return r.json(); })
   .then(function(payload){
-    if(!payload || !payload.posts){ if(cb)cb(false); return; }
-    if(payload.ts <= lastFirebaseTs){ if(cb)cb(false); return; }
-    lastFirebaseTs = payload.ts;
-    isSyncing = true;
+    if(!payload||!payload.posts){ if(cb)cb(false); return; }
+    if(payload.ts<=lastFirebaseTs){ if(cb)cb(false); return; }
+    lastFirebaseTs=payload.ts;
+    isSyncing=true;
     for(var client in payload.posts){
-      if(!posts[client]) posts[client] = [];
-      payload.posts[client].forEach(function(remote){
-        var local = (posts[client]||[]).find(function(p){ return p.id === remote.id; });
+      var remotePosts=payload.posts[client];
+      if(!remotePosts||!remotePosts.length){ isSyncing=false; if(cb)cb(false); return; }
+      if(!posts[client])posts[client]=[];
+      // REPLACE strategy: for each remote post, update or add
+      // Keep local base64 URLs if remote has no URL
+      remotePosts.forEach(function(remote){
+        var local=(posts[client]||[]).find(function(p){return p.id===remote.id;});
         if(local){
-          // Merge: actualizar caption/status/date/changesNote desde Firebase
-          if(remote.caption)   local.caption    = remote.caption;
-          if(remote.status)    local.status     = remote.status;
-          if(remote.date)      local.date       = remote.date;
-          local.changesNote = remote.changesNote || local.changesNote || "";
-          // Mantener url local (base64) — no la sobreescribimos con ""
-          if(remote.url && remote.url.length > 10) local.url = remote.url;
+          // Update metadata from Firebase
+          if(remote.caption) local.caption=remote.caption;
+          if(remote.status)  local.status=remote.status;
+          if(remote.date)    local.date=remote.date;
+          local.changesNote=remote.changesNote||'';
+          // Update URL only if remote has a public URL (not empty)
+          if(remote.url&&remote.url.length>10&&!remote.url.startsWith('data:'))
+            local.url=remote.url;
+        }else{
+          // New post from admin — add it
+          posts[client].push({
+            id:remote.id,
+            url:remote.url||'',
+            caption:remote.caption||'',
+            date:remote.date||'',
+            tone:remote.tone||'neutral',
+            brightness:remote.brightness||0.5,
+            color:remote.color||'#888',
+            mediaType:remote.mediaType||'image',
+            status:remote.status||'pending',
+            changesNote:remote.changesNote||''
+          });
         }
       });
+      // Remove posts that admin deleted (not in remote anymore)
+      // Only if remote has posts (avoid clearing on empty response)
+      if(remotePosts.length>0){
+        posts[client]=posts[client].filter(function(local){
+          return remotePosts.find(function(r){return r.id===local.id;});
+        });
+      }
     }
-    isSyncing = false;
-    if(cb) cb(true);
+    isSyncing=false;
+    if(cb)cb(true);
   })
   .catch(function(e){
-    console.warn("Firebase read error:", e.message);
-    if(cb) cb(false);
+    console.warn('Firebase read error:',e.message);
+    if(cb)cb(false);
   });
 }
 
@@ -991,20 +1018,25 @@ function markSent(){
 // ── Polling Firebase cada 2.5s ──
 var lastSentTs = 0;
 function checkRemoteUpdate(){
-  if(isSyncing) return;
-  fetch(FIREBASE_URL + FIREBASE_PATH + ".json?shallow=true")
-  .then(function(r){ return r.json(); })
+  if(isSyncing)return;
+  fetch(FIREBASE_URL+FIREBASE_PATH+".json?shallow=true")
+  .then(function(r){return r.json();})
   .then(function(data){
-    if(!data) return;
-    var remoteTs = data.ts || 0;
-    var remoteSent = data.sentTs || 0;
-    // Si hay cambios nuevos o el admin acaba de enviar el feed
-    if(remoteTs > lastFirebaseTs || (role==="client" && remoteSent > lastSentTs)){
-      lastSentTs = remoteSent;
+    if(!data)return;
+    var remoteTs=data.ts||0;
+    var remoteSent=data.sentTs||0;
+    var needsUpdate=(remoteTs>lastFirebaseTs)||(role==="client"&&remoteSent>lastSentTs);
+    if(needsUpdate){
+      lastSentTs=remoteSent;
       loadState(function(changed){
         if(changed){
-          if(role==="admin"){ renderAdmin(); }
-          if(role==="client"){ renderPhoneFeed(); renderClientList(); updateApproveBtn(); showToast("Feed actualizado ✦","admin"); }
+          if(role==="admin"){renderAdmin();}
+          if(role==="client"){
+            renderPhoneFeed();
+            renderClientList();
+            updateApproveBtn();
+            showToast("Feed actualizado ✦","admin");
+          }
         }
       });
     }
@@ -1241,24 +1273,66 @@ function handleUpload(e){
     e.target.value='';
     return;
   }
+  // Images: read locally first, then upload to imgbb for public URL
   var loaded=0;
   files.forEach(function(f,fi){
     var reader=new FileReader();
     reader.onload=function(ev){
-      var url=ev.target.result;
-      analyzeColor(url,function(tone,br,color){
-        posts[curClient].unshift({id:'u'+Date.now()+'_'+fi,url:url,caption:'',date:'',tone:tone,brightness:br,color:color,status:'pending',mediaType:'image'});
+      var localUrl=ev.target.result;
+      analyzeColor(localUrl,function(tone,br,color){
+        var postId='u'+Date.now()+'_'+fi;
+        // Add with local URL first so admin sees it immediately
+        posts[curClient].unshift({
+          id:postId,url:localUrl,caption:'',date:'',
+          tone:tone,brightness:br,color:color,
+          status:'pending',mediaType:'image'
+        });
         loaded++;
         if(loaded===files.length){
           renderAdmin();
           showToast(files.length+' foto'+(files.length>1?'s':'')+' anadida'+(files.length>1?'s':''),'success');
           generateCaptionsForNew();
+          // Upload all to imgbb for public URLs (enables Firebase sync)
+          uploadAllToImgbb();
         }
       });
     };
     reader.readAsDataURL(f);
   });
   e.target.value='';
+}
+
+function uploadAllToImgbb(){
+  // Get imgbb key from credentials
+  var key=metaCreds.imgbbKey;
+  if(!key){
+    console.log('No imgbb key — images will be local only (no cross-device sync)');
+    showToast('Configura imgbb en Meta API para sync entre dispositivos','admin');
+    return;
+  }
+  var ps=posts[curClient]||[];
+  ps.forEach(function(p){
+    // Only upload base64 images that don't have a public URL yet
+    if(p.url&&p.url.startsWith('data:image')&&p.mediaType==='image'){
+      var b64=p.url.split(',')[1];
+      var fd=new FormData();
+      fd.append('key',key);
+      fd.append('image',b64);
+      fetch('https://api.imgbb.com/1/upload',{method:'POST',body:fd})
+      .then(function(r){return r.json()})
+      .then(function(data){
+        if(data.success){
+          p.url=data.data.url; // replace base64 with public URL
+          // Update textarea if visible
+          var img=document.querySelector('img[src^="data:"]');
+          if(img&&img.closest('.qcard'))img.src=p.url;
+          saveState(); // now the URL is public — save to Firebase
+          console.log('Uploaded to imgbb:',p.id,p.url);
+        }
+      })
+      .catch(function(e){console.warn('imgbb upload error:',e.message)});
+    }
+  });
 }
 
 function analyzeColor(src,cb){
@@ -1293,12 +1367,29 @@ function delPost(id){
 }
 
 function sendToClient(){
-  var ps=(posts[curClient]||[]).filter(function(p){return p.date});
-  if(!ps.length){showToast('Asigna fechas primero','error');return}
+  var ps=(posts[curClient]||[]);
+  if(!ps.length){showToast('No hay publicaciones en la cola','error');return;}
+  // Mark all pending posts with a date if they don't have one
+  var now=new Date();
+  var months=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  ps.forEach(function(p,i){
+    if(!p.date){
+      var d=new Date(now.getTime()+(i*2*24*60*60*1000));
+      p.date=d.getDate()+' '+months[d.getMonth()]+' - 18:00';
+    }
+  });
   saveState();
-  markSent();
-  addLog('ok','Feed enviado a '+clients[curClient].name+' - '+ps.length+' posts');
-  showToast('Feed enviado - Notificacion enviada','success');
+  // Write sentTs to Firebase to notify client
+  fetch(FIREBASE_URL+FIREBASE_PATH+"/sentTs.json",{
+    method:"PUT",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify(Date.now())
+  }).then(function(){
+    showToast('Feed enviado al cliente ✦','success');
+    addLog('ok','Feed enviado - '+ps.length+' posts');
+  }).catch(function(e){
+    showToast('Error al enviar: '+e.message,'error');
+  });
 }
 
 function updateAnalytics(){
@@ -1532,7 +1623,10 @@ function renderClientList(){
     card.style.animationDelay=(i*30)+'ms';
     card.dataset.id=p.id;
     card.draggable=true;
-    var mediaHtml=isV?'<div class="c-card-img"><video src="'+p.url+'" muted playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover"></video></div>':'<div class="c-card-img"><img src="'+p.url+'" alt="" loading="lazy"></div>';
+    var imgSrc=p.url||'';
+    var mediaHtml=isV?'<div class="c-card-img"><video src="'+imgSrc+'" muted playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover"></video></div>':
+      (imgSrc?'<div class="c-card-img"><img src="'+imgSrc+'" alt="" loading="lazy"></div>':
+      '<div class="c-card-img" style="background:var(--bg3);display:flex;align-items:center;justify-content:center;color:var(--t3);font-size:.7rem;font-family:DM Mono,monospace">Sin imagen</div>');
     card.innerHTML=mediaHtml+
       '<div class="c-card-overlay">'+
         (p.changesNote?'<div class="c-card-changes-note">'+p.changesNote+'</div>':'')+
@@ -1686,7 +1780,7 @@ async function generateCaptionsForNew(){
     }
     if(i<toGenerate.length-1)await new Promise(function(r){setTimeout(r,900)})
   }
-  saveState();
+  saveStateAsync();
   renderAdmin();
   if(role==="client")renderClientList();
   showToast(toGenerate.length+" caption"+(toGenerate.length>1?"s":"")+" generados con IA","success")
@@ -1860,6 +1954,59 @@ async function testApiAvailability(){
 // Upload zone drag
 var uz=qs('#uploadZone');
 if(uz){uz.addEventListener('dragover',function(e){e.preventDefault();uz.classList.add('drag')});uz.addEventListener('dragleave',function(){uz.classList.remove('drag')});uz.addEventListener('drop',function(e){e.preventDefault();uz.classList.remove('drag');var dt=e.dataTransfer;if(dt&&dt.files)handleUpload({target:{files:dt.files,value:''}})});}
+
+/* Subir imagen base64 a imgbb para hacerla pública */
+async function uploadImageForSync(base64DataUrl){
+  // Solo subir si es base64 (no URL)
+  if(!base64DataUrl || !base64DataUrl.startsWith('data:image')) return base64DataUrl;
+  // Usar imgbb si hay key configurada
+  if(metaCreds.imgbbKey){
+    try{
+      var b64=base64DataUrl.split(',')[1];
+      var form=new FormData();
+      form.append('key', metaCreds.imgbbKey);
+      form.append('image', b64);
+      var res=await fetch('https://api.imgbb.com/1/upload',{method:'POST',body:form});
+      var data=await res.json();
+      if(data.success) return data.data.url;
+    }catch(e){ console.warn('imgbb upload failed:', e.message); }
+  }
+  // Sin key: devolver url vacía (el cliente verá placeholder)
+  return '';
+}
+
+/* saveState asíncrono — sube imágenes antes de guardar */
+async function saveStateAsync(){
+  if(isSyncing) return;
+  var payload = { posts: {}, ts: Date.now() };
+  for(var client in posts){
+    payload.posts[client] = await Promise.all((posts[client]||[]).map(async function(p){
+      var publicUrl = p.url;
+      if(p.url && p.url.startsWith('data:image')){
+        // Intentar obtener URL pública
+        publicUrl = await uploadImageForSync(p.url);
+      }
+      return {
+        id: p.id,
+        caption: p.caption||"",
+        status: p.status||"pending",
+        date: p.date||"",
+        tone: p.tone||"neutral",
+        brightness: p.brightness||0.5,
+        color: p.color||"#888",
+        mediaType: p.mediaType||"image",
+        changesNote: p.changesNote||"",
+        url: publicUrl||""
+      };
+    }));
+  }
+  fetch(FIREBASE_URL + FIREBASE_PATH + ".json", {
+    method: "PUT",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify(payload)
+  }).catch(function(e){ console.warn("Firebase write error:", e.message); });
+}
+
 
 </script>
 </body>
