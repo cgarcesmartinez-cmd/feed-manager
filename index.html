@@ -485,21 +485,21 @@ body.cc #cur-t{transform:translate(-50%,-50%) scale(.88)}
 /* ── APPROVAL GRID ── */
 .c-card-img{position:absolute;inset:0}
 .c-card-img img,.c-card-img video{width:100%;height:100%;object-fit:cover;display:block}
-.c-card-overlay{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:.75rem .65rem;background:linear-gradient(to top,rgba(26,22,18,.92) 0%,rgba(26,22,18,.3) 50%,transparent 72%);transition:all 200ms;border:2px solid transparent}
+.c-card-overlay{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:.8rem .75rem;background:linear-gradient(to top,rgba(10,8,6,.97) 0%,rgba(10,8,6,.82) 45%,rgba(10,8,6,.3) 70%,transparent 88%);transition:all 200ms;border:2px solid transparent}
 .c-card-status-pill{font-family:'DM Mono',monospace;font-size:.45rem;letter-spacing:.1em;text-transform:uppercase;padding:.18rem .4rem;border-radius:3px;display:inline-flex;align-items:center;gap:.25rem;margin-bottom:.25rem;align-self:flex-start}
-.c-card-caption{font-size:.68rem;color:rgba(237,232,223,.92);font-weight:300;line-height:1.4;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:.4rem}
+.c-card-caption{font-size:.72rem;color:rgba(237,232,223,.96);font-weight:300;line-height:1.45;overflow:hidden;margin-bottom:.5rem;max-height:5.5rem}
 .c-card-actions{display:flex;gap:.25rem}
-.c-card-btn-ok{background:var(--grad-gold);color:var(--bg);border:none;font-family:'DM Mono',monospace;font-size:.52rem;letter-spacing:.1em;text-transform:uppercase;padding:.35rem .7rem;border-radius:3px;cursor:auto;transition:all 140ms;white-space:nowrap;flex:1}
+.c-card-btn-ok{background:var(--grad-gold);color:var(--bg);border:none;font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;padding:.45rem .8rem;border-radius:4px;cursor:auto;transition:all 140ms;white-space:nowrap;flex:1}
 .c-card-btn-ok.done{background:var(--greenL);color:var(--green);border:1px solid var(--greenB)}
-.c-card-btn-change{background:rgba(237,232,223,.1);color:var(--t2);border:1px solid var(--line2);font-family:'DM Mono',monospace;font-size:.52rem;letter-spacing:.1em;text-transform:uppercase;padding:.35rem .55rem;border-radius:3px;cursor:auto;transition:all 140ms;white-space:nowrap}
+.c-card-btn-change{background:rgba(237,232,223,.12);color:var(--t2);border:1px solid var(--line2);font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;padding:.45rem .65rem;border-radius:4px;cursor:auto;transition:all 140ms;white-space:nowrap}
 .c-card-btn-change:hover{color:var(--rose);border-color:var(--roseB)}
 .c-card-changes-note{font-size:.55rem;color:var(--rose);background:var(--roseL);border-radius:3px;padding:.2rem .35rem;margin-bottom:.25rem;line-height:1.3}
 
 /* ── APPROVAL LIST ── */
 .c-section-lbl{font-family:'DM Mono',monospace;font-size:.56rem;letter-spacing:.2em;text-transform:uppercase;color:var(--t3);margin-bottom:.65rem;display:flex;align-items:center;gap:.55rem}
 .c-section-lbl::before{content:'';width:1rem;height:1px;background:var(--gold);display:block}
-.c-posts{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin-bottom:1.75rem;background:var(--line2);border-radius:8px;overflow:hidden;min-height:0}
-.c-post-card{background:var(--glass2);border:none;border-radius:0;display:flex;flex-direction:column;animation:cardIn 300ms var(--eo) both;transition:opacity 200ms;position:relative;overflow:hidden;aspect-ratio:4/5;cursor:pointer;min-height:200px}
+.c-posts{display:grid;grid-template-columns:repeat(2,1fr);gap:4px;margin-bottom:1.75rem;background:var(--line2);border-radius:8px;overflow:hidden;min-height:0}
+.c-post-card{background:var(--glass2);border:none;border-radius:0;display:flex;flex-direction:column;animation:cardIn 300ms var(--eo) both;transition:opacity 200ms;position:relative;overflow:hidden;aspect-ratio:3/4;cursor:auto;min-height:220px}
 .c-post-card:hover{opacity:.85}
 .c-post-card.is-approved .c-card-overlay{background:rgba(74,222,128,.18);border:2px solid var(--green)}
 .c-post-card.is-changes .c-card-overlay{background:rgba(251,113,133,.15);border:2px solid var(--rose)}
@@ -552,6 +552,16 @@ body.cc #cur-t{transform:translate(-50%,-50%) scale(.88)}
 .toast.success{background:var(--greenL);color:var(--green);border:1px solid var(--greenB)}
 .toast.error{background:var(--roseL);color:var(--rose);border:1px solid var(--roseB)}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+
+/* Long press hint */
+.c-post-card::after{content:'';position:absolute;inset:0;background:transparent;transition:background .35s}
+.c-post-card:active::after{background:rgba(201,168,76,.08)}
+.phone-cell:active{opacity:.85}
+/* Hint text para móvil */
+@media(max-width:600px){
+  .c-feed-note{font-size:.7rem;color:var(--t3);text-align:center;padding:.6rem .5rem 1rem;line-height:1.6}
+}
 
 ::-webkit-scrollbar{width:4px}
 ::-webkit-scrollbar-track{background:transparent}
@@ -890,14 +900,14 @@ body.cc #cur-t{transform:translate(-50%,-50%) scale(.88)}
 <div class="ch-overlay" id="chOverlay" onclick="closeChanges()"><div class="ch-sheet" onclick="event.stopPropagation()"><div class="ch-drag"></div><div class="ch-title">Pedir cambios</div><textarea class="ch-inp" id="chText" rows="4" placeholder="Cuéntanos qué quieres cambiar..."></textarea><button class="ch-submit" onclick="submitChanges()">Enviar</button><button class="ch-cancel" onclick="closeChanges()">Cancelar</button></div></div>
 
 <!-- NC MODAL -->
-<div class="nc-overlay" id="ncOverlay" onclick="closeNC()"><div class="nc-box" onclick="event.stopPropagation()"><div class="nc-title">Nuevo cliente</div><input class="nc-inp" type="text" id="ncName" placeholder="Nombre del negocio *"><input class="nc-inp" type="text" id="ncHandle" placeholder="@instagram_handle"><input class="nc-inp" type="email" id="ncEmail" placeholder="Email del cliente *"><input class="nc-inp" type="tel" id="ncPhone" placeholder="Teléfono / WhatsApp"><input class="nc-inp" type="text" id="ncUser" placeholder="Usuario de acceso *"><input class="nc-inp" type="password" id="ncPass" placeholder="Contraseña *"><button class="nc-submit" onclick="createClient()">Crear cliente</button><button class="nc-cancel" onclick="closeNC()">Cancelar</button></div></div>
+<div class="nc-overlay" id="ncOverlay" onclick="closeNC()"><div class="nc-box" onclick="event.stopPropagation()"><div class="nc-title">Nuevo cliente</div><input class="nc-inp" type="text" id="ncName" placeholder="Nombre del negocio *"><input class="nc-inp" type="text" id="ncHandle" placeholder="@instagram_handle"><input class="nc-inp" type="email" id="ncEmail" placeholder="Email del cliente *"><input class="nc-inp" type="tel" id="ncPhone" placeholder="Teléfono / WhatsApp"><input class="nc-inp" type="text" id="ncUser" placeholder="Usuario de acceso *"><input class="nc-inp" type="password" id="ncPass" placeholder="Contraseña *"><button class="nc-submit" onclick="createClien
+t()">Crear cliente</button><button class="nc-cancel" onclick="closeNC()">Cancelar</button></div></div>
 
 <!-- PUB OVERLAY -->
 <div class="pub-overlay" id="pubOverlay"><div class="pub-box"><div class="pub-spinner"></div><div class="pub-title" id="pubTitle">Publicando...</div><div class="pub-sub" id="pubSub">Procesando...</div></div></div>
 <div class="toast" id="toast"></div>
 
 <script>
-
 var FIREBASE_URL = "https://feed-manager-3b051-default-rtdb.europe-west1.firebasedatabase.app";
 var FIREBASE_PATH = "/feedmanager";
 var firebaseListener = null;
@@ -1450,26 +1460,44 @@ function phoneSwap(aId,bId){
 }
 
 function addPhoneTouch(el,pid){
-  var clone;
+  var clone=null, longPressTimer=null, isDragging=false;
   el.addEventListener('touchstart',function(e){
-    var t=e.touches[0];
-    clone=el.cloneNode(true);
-    clone.style.cssText='position:fixed;width:'+el.offsetWidth+'px;height:'+el.offsetHeight+'px;opacity:.65;pointer-events:none;z-index:9999;left:'+(t.clientX-el.offsetWidth/2)+'px;top:'+(t.clientY-el.offsetHeight/2)+'px;border-radius:2px;box-shadow:0 8px 24px rgba(0,0,0,.5)';
-    document.body.appendChild(clone);el.style.opacity='.3';
+    isDragging=false;
+    longPressTimer=setTimeout(function(){
+      isDragging=true;
+      var t=e.touches[0];
+      clone=el.cloneNode(true);
+      clone.style.cssText='position:fixed;width:'+el.offsetWidth+'px;height:'+el.offsetHeight+'px;opacity:.65;pointer-events:none;z-index:9999;left:'+(t.clientX-el.offsetWidth/2)+'px;top:'+(t.clientY-el.offsetHeight/2)+'px;border-radius:2px;box-shadow:0 8px 24px rgba(0,0,0,.5)';
+      document.body.appendChild(clone);el.style.opacity='.3';
+      if(navigator.vibrate) navigator.vibrate(40);
+    }, 350);
   },{passive:true});
   el.addEventListener('touchmove',function(e){
-    if(!clone)return;e.preventDefault();var t=e.touches[0];
-    clone.style.left=(t.clientX-el.offsetWidth/2)+'px';clone.style.top=(t.clientY-el.offsetHeight/2)+'px';
+    if(!isDragging){
+      if(longPressTimer){clearTimeout(longPressTimer);longPressTimer=null;}
+      return;
+    }
+    e.preventDefault();
+    var t=e.touches[0];
+    if(clone){clone.style.left=(t.clientX-el.offsetWidth/2)+'px';clone.style.top=(t.clientY-el.offsetHeight/2)+'px';}
     clone.style.display='none';var target=document.elementFromPoint(t.clientX,t.clientY);clone.style.display='';
-    qsa('.phone-cell').forEach(function(c){c.classList.remove('phone-drag-over')});
+    qsa('.phone-cell').forEach(function(c){c.classList.remove('phone-drag-over');});
     var pe=target&&target.closest('.phone-cell');if(pe&&pe!==el&&!pe.classList.contains('phone-cell-empty'))pe.classList.add('phone-drag-over');
   },{passive:false});
   el.addEventListener('touchend',function(e){
-    if(!clone)return;var t=e.changedTouches[0];clone.remove();clone=null;el.style.opacity='';
-    qsa('.phone-cell').forEach(function(c){c.classList.remove('phone-drag-over')});
+    if(longPressTimer){clearTimeout(longPressTimer);longPressTimer=null;}
+    if(!isDragging||!clone) return;
+    var t=e.changedTouches[0];clone.remove();clone=null;el.style.opacity='';isDragging=false;
+    qsa('.phone-cell').forEach(function(c){c.classList.remove('phone-drag-over');});
     var target=document.elementFromPoint(t.clientX,t.clientY);
     var pe=target&&target.closest('.phone-cell');
     if(pe&&pe.dataset.id&&pe.dataset.id!==pid&&!pe.classList.contains('phone-cell-empty'))phoneSwap(pid,pe.dataset.id);
+  });
+  el.addEventListener('touchcancel',function(){
+    if(longPressTimer){clearTimeout(longPressTimer);longPressTimer=null;}
+    if(clone){clone.remove();clone=null;}
+    el.style.opacity='';isDragging=false;
+    qsa('.phone-cell').forEach(function(c){c.classList.remove('phone-drag-over');});
   });
 }
 
@@ -1524,25 +1552,49 @@ function renderClientList(){
   });
 }
 function addListTouch(el,pid){
-  var clone;
+  var clone=null, longPressTimer=null, isDragging=false;
   el.addEventListener('touchstart',function(e){
-    var t=e.touches[0];clone=el.cloneNode(true);
-    clone.style.cssText='position:fixed;width:'+el.offsetWidth+'px;height:'+el.offsetHeight+'px;opacity:.65;pointer-events:none;z-index:9999;left:'+(t.clientX-el.offsetWidth/2)+'px;top:'+(t.clientY-el.offsetHeight/2)+'px;border-radius:4px;box-shadow:0 8px 24px rgba(0,0,0,.5)';
-    document.body.appendChild(clone);el.style.opacity='.3';
+    isDragging=false;
+    longPressTimer=setTimeout(function(){
+      // Long press activado — iniciar drag
+      isDragging=true;
+      var t=e.touches[0];
+      clone=el.cloneNode(true);
+      clone.style.cssText='position:fixed;width:'+el.offsetWidth+'px;height:'+el.offsetHeight+'px;opacity:.65;pointer-events:none;z-index:9999;left:'+(t.clientX-el.offsetWidth/2)+'px;top:'+(t.clientY-el.offsetHeight/2)+'px;border-radius:4px;box-shadow:0 8px 24px rgba(0,0,0,.5)';
+      document.body.appendChild(clone);
+      el.style.opacity='.3';
+      // Vibración táctil si disponible
+      if(navigator.vibrate) navigator.vibrate(40);
+    }, 350);
   },{passive:true});
   el.addEventListener('touchmove',function(e){
-    if(!clone)return;e.preventDefault();var t=e.touches[0];
-    clone.style.left=(t.clientX-el.offsetWidth/2)+'px';clone.style.top=(t.clientY-el.offsetHeight/2)+'px';
+    if(!isDragging){
+      // No estamos en drag — cancelar long press y dejar scroll normal
+      if(longPressTimer){clearTimeout(longPressTimer);longPressTimer=null;}
+      return;
+    }
+    // Estamos en drag — bloquear scroll
+    e.preventDefault();
+    var t=e.touches[0];
+    if(clone){clone.style.left=(t.clientX-el.offsetWidth/2)+'px';clone.style.top=(t.clientY-el.offsetHeight/2)+'px';}
     clone.style.display='none';var target=document.elementFromPoint(t.clientX,t.clientY);clone.style.display='';
-    qsa('.c-post-card').forEach(function(c){c.style.outline=''});
+    qsa('.c-post-card').forEach(function(c){c.style.outline='';});
     var pe=target&&target.closest('.c-post-card');if(pe&&pe!==el)pe.style.outline='2px solid var(--gold)';
   },{passive:false});
   el.addEventListener('touchend',function(e){
-    if(!clone)return;var t=e.changedTouches[0];clone.remove();clone=null;el.style.opacity='';
-    qsa('.c-post-card').forEach(function(c){c.style.outline=''});
+    if(longPressTimer){clearTimeout(longPressTimer);longPressTimer=null;}
+    if(!isDragging||!clone) return;
+    var t=e.changedTouches[0];clone.remove();clone=null;el.style.opacity='';isDragging=false;
+    qsa('.c-post-card').forEach(function(c){c.style.outline='';});
     var target=document.elementFromPoint(t.clientX,t.clientY);
     var pe=target&&target.closest('.c-post-card');
     if(pe&&pe.dataset.id&&pe.dataset.id!==pid)phoneSwap(pid,pe.dataset.id);
+  });
+  el.addEventListener('touchcancel',function(){
+    if(longPressTimer){clearTimeout(longPressTimer);longPressTimer=null;}
+    if(clone){clone.remove();clone=null;}
+    el.style.opacity='';isDragging=false;
+    qsa('.c-post-card').forEach(function(c){c.style.outline='';});
   });
 }
 function approvePost(id,btn){
