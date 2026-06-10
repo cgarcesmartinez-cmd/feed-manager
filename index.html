@@ -483,11 +483,11 @@ body.cc #cur-t{transform:translate(-50%,-50%) scale(.88)}
 .c-nav-tab:hover:not(.on){color:var(--t2);border-color:var(--line3)}
 
 /* ── APPROVAL GRID ── */
-.c-card-img{position:absolute;inset:0}
+.c-card-img{width:100%;aspect-ratio:1/1;overflow:hidden;flex-shrink:0}.c-card-img img,.c-card-img video{width:100%;height:100%;object-fit:cover;display:block}
 .c-card-img img,.c-card-img video{width:100%;height:100%;object-fit:cover;display:block}
-.c-card-overlay{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:.8rem .7rem;background:linear-gradient(to top,rgba(0,0,0,.93) 0%,rgba(0,0,0,.75) 40%,rgba(0,0,0,.2) 68%,transparent 88%);transition:all 200ms;border:2px solid transparent}
+.c-card-overlay{display:flex;flex-direction:column;padding:.65rem .7rem .6rem;background:var(--bg2);border-top:1px solid var(--line2);transition:all 200ms;border:2px solid transparent}
 .c-card-status-pill{font-family:'DM Mono',monospace;font-size:.45rem;letter-spacing:.1em;text-transform:uppercase;padding:.18rem .4rem;border-radius:3px;display:inline-flex;align-items:center;gap:.25rem;margin-bottom:.25rem;align-self:flex-start}
-.c-card-caption{font-size:.75rem;color:#FFFFFF;font-weight:400;line-height:1.5;margin-bottom:.55rem;word-break:break-word;text-shadow:0 1px 3px rgba(0,0,0,.8)}
+.c-card-caption{font-size:.72rem;color:var(--cream);font-weight:300;line-height:1.5;margin-bottom:.55rem;word-break:break-word;max-height:5rem;overflow:hidden;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical}
 .c-card-text-panel{background:rgba(10,8,6,.96);padding:.65rem .7rem .5rem;border-top:1px solid rgba(201,168,76,.15)}
 .c-card-actions{display:flex;gap:.25rem}
 .c-card-btn-ok{background:var(--grad-gold);color:var(--bg);border:none;font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;padding:.45rem .8rem;border-radius:4px;cursor:auto;transition:all 140ms;white-space:nowrap;flex:1}
@@ -500,7 +500,7 @@ body.cc #cur-t{transform:translate(-50%,-50%) scale(.88)}
 .c-section-lbl{font-family:'DM Mono',monospace;font-size:.56rem;letter-spacing:.2em;text-transform:uppercase;color:var(--t3);margin-bottom:.65rem;display:flex;align-items:center;gap:.55rem}
 .c-section-lbl::before{content:'';width:1rem;height:1px;background:var(--gold);display:block}
 .c-posts{display:grid;grid-template-columns:repeat(2,1fr);gap:4px;margin-bottom:1.75rem;background:var(--line2);border-radius:8px;overflow:hidden;min-height:0}
-.c-post-card{background:var(--glass2);border:none;border-radius:0;display:flex;flex-direction:column;animation:cardIn 300ms var(--eo) both;transition:opacity 200ms;position:relative;overflow:hidden;aspect-ratio:3/4;cursor:auto;min-height:220px}
+.c-post-card{background:var(--bg2);border:none;border-radius:6px;display:flex;flex-direction:column;animation:cardIn 300ms var(--eo) both;transition:opacity 200ms;overflow:hidden;cursor:auto;border:1px solid var(--line2)}
 .c-post-card:hover{opacity:.85}
 .c-post-card.is-approved .c-card-overlay{background:rgba(74,222,128,.18);border:2px solid var(--green)}
 .c-post-card.is-changes .c-card-overlay{background:rgba(251,113,133,.15);border:2px solid var(--rose)}
@@ -953,7 +953,7 @@ function loadState(cb){
   .then(function(r){ return r.json(); })
   .then(function(payload){
     if(!payload||!payload.posts){ if(cb)cb(false); return; }
-    if(payload.ts<=lastFirebaseTs){ if(cb)cb(false); return; }
+    if(lastFirebaseTs>0 && payload.ts<=lastFirebaseTs){ if(cb)cb(false); return; }
     lastFirebaseTs=payload.ts;
     isSyncing=true;
     for(var client in payload.posts){
@@ -1303,16 +1303,10 @@ function handleUpload(e){
 }
 
 function uploadAllToImgbb(){
-  // Get imgbb key from credentials
-  var key=metaCreds.imgbbKey;
-  if(!key){
-    console.log('No imgbb key — images will be local only (no cross-device sync)');
-    showToast('Configura imgbb en Meta API para sync entre dispositivos','admin');
-    return;
-  }
+  var key=metaCreds.imgbbKey||'ee5e39579cd0ceb0fc752c337656f549';
   var ps=posts[curClient]||[];
+  var uploaded=0;
   ps.forEach(function(p){
-    // Only upload base64 images that don't have a public URL yet
     if(p.url&&p.url.startsWith('data:image')&&p.mediaType==='image'){
       var b64=p.url.split(',')[1];
       var fd=new FormData();
@@ -1321,16 +1315,21 @@ function uploadAllToImgbb(){
       fetch('https://api.imgbb.com/1/upload',{method:'POST',body:fd})
       .then(function(r){return r.json()})
       .then(function(data){
-        if(data.success){
-          p.url=data.data.url; // replace base64 with public URL
-          // Update textarea if visible
-          var img=document.querySelector('img[src^="data:"]');
-          if(img&&img.closest('.qcard'))img.src=p.url;
-          saveState(); // now the URL is public — save to Firebase
-          console.log('Uploaded to imgbb:',p.id,p.url);
+        if(data&&data.success&&data.data&&data.data.url){
+          p.url=data.data.url;
+          uploaded++;
+          // update visible img tag
+          var cards=document.querySelectorAll('.qcard-img img');
+          cards.forEach(function(img){
+            if(img.src&&img.src.startsWith('data:'))img.src=p.url;
+          });
+          saveState();
+          console.log('imgbb OK:',p.id,p.url);
+        }else{
+          console.warn('imgbb fail:',JSON.stringify(data).slice(0,100));
         }
       })
-      .catch(function(e){console.warn('imgbb upload error:',e.message)});
+      .catch(function(e){console.warn('imgbb error:',e.message)});
     }
   });
 }
@@ -1614,7 +1613,10 @@ function renderClient(){
 var listDragSrc=null;
 function renderClientList(){
   var list=qs('#cPosts');list.innerHTML='';var ps=posts[curClient]||[];
-  if(!ps.length){list.innerHTML='<div style="padding:1.5rem;text-align:center;color:var(--t3);font-size:.8rem;border:1.5px dashed var(--line);border-radius:8px;grid-column:1/-1">No hay publicaciones para revisar</div>';return}
+  if(!ps.length){
+    list.innerHTML='<div style="padding:1.5rem;text-align:center;color:var(--t3);font-size:.8rem;border:1.5px dashed var(--line);border-radius:8px;grid-column:1/-1">No hay publicaciones para revisar</div>';
+    return;
+  }
   ps.forEach(function(p,i){
     var card=document.createElement('div');
     var isDone=p.status==='approved'||p.status==='published';
@@ -1624,18 +1626,56 @@ function renderClientList(){
     card.dataset.id=p.id;
     card.draggable=true;
     var imgSrc=p.url||'';
-    var mediaHtml=isV?'<div class="c-card-img"><video src="'+imgSrc+'" muted playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover"></video></div>':
-      (imgSrc?'<div class="c-card-img"><img src="'+imgSrc+'" alt="" loading="lazy"></div>':
-      '<div class="c-card-img" style="background:var(--bg3);display:flex;align-items:center;justify-content:center;color:var(--t3);font-size:.7rem;font-family:DM Mono,monospace">Sin imagen</div>');
-    card.innerHTML=mediaHtml+
-      '<div class="c-card-overlay">'+
-        (p.changesNote?'<div class="c-card-changes-note">'+p.changesNote+'</div>':'')+
-        '<div class="c-card-caption">'+(p.caption||'Sin caption')+'</div>'+
-        '<div class="c-card-actions">'+
-          '<button class="c-card-btn-ok'+(isDone?' done':'')+'" onclick="approvePost(\''+p.id+'\',this)">'+(isDone?'✓':'Aprobar')+'</button>'+
-          (!isDone?'<button class="c-card-btn-change" onclick="openChanges(\''+p.id+'\')">✎</button>':'')+
-        '</div>'+
-      '</div>';
+    // ── Imagen (cuadrada, arriba) ──
+    var mediaDiv=document.createElement('div');
+    mediaDiv.className='c-card-img';
+    if(isV){
+      var vid=document.createElement('video');
+      vid.src=imgSrc;vid.muted=true;vid.setAttribute('playsinline','');
+      vid.setAttribute('preload','metadata');
+      mediaDiv.appendChild(vid);
+    }else if(imgSrc){
+      var img=document.createElement('img');
+      img.src=imgSrc;img.alt='';img.loading='lazy';
+      mediaDiv.appendChild(img);
+    }else{
+      mediaDiv.style.cssText='background:var(--bg3);display:flex;align-items:center;justify-content:center;color:var(--t3);font-size:.65rem;font-family:DM Mono,monospace';
+      mediaDiv.textContent='Sin imagen';
+    }
+    card.appendChild(mediaDiv);
+    // ── Overlay (debajo de la imagen) ──
+    var overlay=document.createElement('div');
+    overlay.className='c-card-overlay'+(isDone?' approved-overlay':'');
+    // Nota de cambios si la hay
+    if(p.changesNote){
+      var note=document.createElement('div');
+      note.className='c-card-changes-note';
+      note.textContent=p.changesNote;
+      overlay.appendChild(note);
+    }
+    // Caption
+    var captionDiv=document.createElement('div');
+    captionDiv.className='c-card-caption';
+    captionDiv.textContent=p.caption||'Sin caption';
+    overlay.appendChild(captionDiv);
+    // Botones
+    var actions=document.createElement('div');
+    actions.className='c-card-actions';
+    var btnOk=document.createElement('button');
+    btnOk.className='c-card-btn-ok'+(isDone?' done':'');
+    btnOk.textContent=isDone?'✓ Aprobada':'Aprobar';
+    btnOk.onclick=(function(pid,btn){return function(){approvePost(pid,btn)}})(p.id,btnOk);
+    actions.appendChild(btnOk);
+    if(!isDone){
+      var btnChange=document.createElement('button');
+      btnChange.className='c-card-btn-change';
+      btnChange.textContent='✎';
+      btnChange.onclick=(function(pid){return function(){openChanges(pid)}})(p.id);
+      actions.appendChild(btnChange);
+    }
+    overlay.appendChild(actions);
+    card.appendChild(overlay);
+    // Drag events
     card.addEventListener('dragstart',function(e){listDragSrc=card;card.style.opacity='.4';e.dataTransfer.setData('text/plain',p.id)});
     card.addEventListener('dragover',function(e){e.preventDefault();card.style.outline='2px solid var(--gold)'});
     card.addEventListener('dragleave',function(){card.style.outline=''});
