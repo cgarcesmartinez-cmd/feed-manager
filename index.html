@@ -536,16 +536,16 @@ body.cc #cur-t{transform:translate(-50%,-50%) scale(.88)}
 
 /* Changes modal */
 .ch-overlay{position:fixed;inset:0;z-index:300;background:rgba(26,22,18,0);pointer-events:none;transition:background 200ms var(--spring);display:flex;align-items:flex-end;justify-content:center}
-.ch-overlay.on{background:rgba(26,22,18,.8);pointer-events:auto;backdrop-filter:blur(6px)}
+.ch-overlay.on{background:rgba(26,22,18,.8);pointer-events:auto;backdrop-filter:blur(6px)}.ch-overlay.on .ch-sheet{transform:translateY(0)}
 .ch-sheet{width:100%;max-width:520px;background:var(--bg2);border-radius:14px 14px 0 0;padding:1.35rem 1.75rem 2rem;transform:translateY(110%);transition:transform 360ms var(--spring);border-top:1px solid var(--line2);box-shadow:0 -8px 40px rgba(0,0,0,.6)}
 .ch-overlay.on .ch-sheet{transform:translateY(0)}
 .ch-drag{width:2.25rem;height:3px;background:var(--line2);border-radius:2px;margin:0 auto 1.35rem}
 .ch-title{font-family:'Cormorant',serif;font-size:1.4rem;font-style:italic;color:var(--t1);margin-bottom:1rem}
 .ch-inp{width:100%;background:var(--bg3);border:1px solid var(--line2);color:var(--t1);font-size:.88rem;font-weight:300;padding:.85rem 1rem;outline:none;resize:none;border-radius:8px;margin-bottom:.8rem;-webkit-appearance:none;transition:border-color 140ms}
 .ch-inp:focus{border-color:var(--goldB)}
-.ch-submit{width:100%;background:var(--grad-gold);color:var(--bg);border:none;font-family:'DM Mono',monospace;font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;padding:.88rem;border-radius:7px;cursor:auto;transition:all 140ms}
+.ch-submit{width:100%;background:var(--grad-gold);color:var(--bg);border:none;font-family:'DM Mono',monospace;font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;padding:.88rem;border-radius:7px;cursor:pointer;transition:all 140ms}
 .ch-submit:hover{filter:brightness(1.08)}
-.ch-cancel{width:100%;background:none;border:none;color:var(--t3);font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;padding:.75rem;cursor:auto;margin-top:.25rem}
+.ch-cancel{width:100%;background:none;border:none;color:var(--t3);font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;padding:.75rem;cursor:pointer;margin-top:.25rem}
 
 /* Toast */
 .toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.92);padding:.9rem 2rem;font-family:'DM Mono',monospace;font-size:.7rem;letter-spacing:.1em;z-index:1000;opacity:0;pointer-events:none;transition:all 280ms var(--spring);white-space:pre-line;border-radius:8px;max-width:calc(100vw - 3rem);text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.6)}
@@ -1803,52 +1803,78 @@ async function generateCaptionsForNew(){
   if(!toGenerate.length){showToast("Todos los posts ya tienen caption","admin");return}
   showToast("Analizando "+toGenerate.length+" imagen"+(toGenerate.length>1?"es":"")+" con IA...","admin");
   var bizType=curClient==="sarai"?"floristeria artesanal en Barcelona. Tienda familiar desde 1988":"barberia profesional en Barcelona";
-  // Collect existing captions to avoid repetition
-  var existingCaptions=(posts[curClient]||[]).filter(function(p){return p.caption&&p.caption.length>10}).map(function(p){return p.caption.slice(0,60)}).join(' | ');
+  var existingCaptions=(posts[curClient]||[]).filter(function(p){return p.caption&&p.caption.length>10}).map(function(p){return p.caption.slice(0,80)}).join(" | ");
   for(var i=0;i<toGenerate.length;i++){
     var p=toGenerate[i];
     var caption="";
     var msgContent=[];
-    // Send actual image via Vision if available
-    if(p.url&&(p.url.startsWith("data:image")||p.url.startsWith("http"))){
-      if(p.url.startsWith("data:image")){
+    var seed=Math.floor(Math.random()*99999);
+    // ── Preparar bloque de imagen ──
+    var imageReady=false;
+    if(p.url&&p.url.startsWith("data:image")){
+      // base64 local — redimensionar a 384px
+      await new Promise(function(resolve){
+        makeThumbnail(p.url,384,0.85,function(thumb){
+          var parts=thumb.split(",");
+          var mimeMatch=parts[0].match(/data:(image\/[^;]+)/);
+          var mime=mimeMatch?mimeMatch[1]:"image/jpeg";
+          msgContent.push({type:"image",source:{type:"base64",media_type:mime,data:parts[1]}});
+          imageReady=true;
+          resolve();
+        });
+      });
+    }else if(p.url&&p.url.startsWith("http")){
+      // URL pública — descargar y convertir a base64
+      try{
+        var imgResp=await fetch(p.url);
+        var blob=await imgResp.blob();
+        var b64=await new Promise(function(resolve){
+          var reader=new FileReader();
+          reader.onloadend=function(){
+            var result=reader.result;
+            var b64data=result.split(",")[1];
+            resolve(b64data);
+          };
+          reader.readAsDataURL(blob);
+        });
+        var mime=blob.type||"image/jpeg";
+        // Redimensionar via canvas
         await new Promise(function(resolve){
-          makeThumbnail(p.url,384,0.85,function(thumb){
+          var dataUrl="data:"+mime+";base64,"+b64;
+          makeThumbnail(dataUrl,384,0.85,function(thumb){
             var parts=thumb.split(",");
-            var mimeMatch=parts[0].match(/data:(image\/[^;]+)/);
-            var mime=mimeMatch?mimeMatch[1]:"image/jpeg";
-            msgContent.push({type:"image",source:{type:"base64",media_type:mime,data:parts[1]}});
+            msgContent.push({type:"image",source:{type:"base64",media_type:"image/jpeg",data:parts[1]}});
+            imageReady=true;
             resolve();
           });
         });
-      }else{
-        // Public URL — send as url_source
-        msgContent.push({type:"image",source:{type:"url",url:p.url}});
+      }catch(fetchErr){
+        console.warn("No se pudo descargar imagen:",p.url,fetchErr.message);
       }
     }
-    var seed=Math.floor(Math.random()*9999);
-    var avoidText=existingCaptions.length>10?" EVITA repetir estas frases ya usadas: "+existingCaptions.slice(0,200):"";
+    var avoidText=existingCaptions.length>10?" NUNCA repitas estas frases ya usadas: "+existingCaptions.slice(0,300):"";
     msgContent.push({
       type:"text",
-      text:"Eres community manager experto en Instagram para una "+bizType+". ANALIZA esta imagen con detalle y escribe un caption UNICO y CREATIVO (seed:"+seed+"). REGLAS ESTRICTAS: 1) Identifica exactamente que hay en la imagen (flor especifica, planta, ramo, color) y mencionalo. 2) Escribe 1-2 frases poeticas en espanol con 1-2 emojis relevantes. 3) Salta una linea. 4) Escribe 10-12 hashtags en espanol e ingles especificos al contenido. 5) Devuelve SOLO el texto del caption, sin explicaciones."+avoidText
+      text:"Eres community manager experto en Instagram para una "+bizType+". "+(imageReady?"MIRA ESTA IMAGEN con mucho detalle. ":"")+"Escribe un caption UNICO (id:"+seed+") para Instagram. REGLAS: 1) "+(imageReady?"Identifica exactamente que hay (tipo de flor, color, composicion) y mencionalos especificamente. ":"Crea texto original sobre flores de temporada. ")+"2) 1-2 frases poeticas en espanol con emojis. 3) Linea en blanco. 4) 10-12 hashtags especificos al contenido en espanol e ingles. 5) Devuelve SOLO el caption."+avoidText
     });
     try{
       var res=await fetch("https://api.anthropic.com/v1/messages",{
         method:"POST",
         headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:320,messages:[{role:"user",content:msgContent}]})
+        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:350,messages:[{role:"user",content:msgContent}]})
       });
       var raw=await res.text();
       var data;
       try{data=JSON.parse(raw)}catch(pe){data=null}
       if(data&&res.ok&&data.content&&data.content[0]&&data.content[0].text){
         caption=data.content[0].text.trim();
-        // Update existing captions list to avoid next post repeating
-        existingCaptions+=(" | "+caption.slice(0,60));
+        existingCaptions+=" | "+caption.slice(0,80);
       }else{
+        console.warn("API caption fail ("+res.status+"):",raw.slice(0,200));
         caption=await generateCaptionTextOnly(p,bizType,seed);
       }
     }catch(e){
+      console.warn("Caption fetch error:",e.message);
       caption=await generateCaptionTextOnly(p,bizType,seed);
     }
     if(caption){
@@ -1858,7 +1884,7 @@ async function generateCaptionsForNew(){
       var captEl=document.querySelector(".c-post-card[data-id=\""+p.id+"\"] .c-card-caption");
       if(captEl)captEl.textContent=caption;
     }
-    if(i<toGenerate.length-1)await new Promise(function(r){setTimeout(r,800)})
+    if(i<toGenerate.length-1)await new Promise(function(r){setTimeout(r,1000)})
   }
   saveState();
   renderAdmin();
