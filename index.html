@@ -535,8 +535,8 @@ body.cc #cur-t{transform:translate(-50%,-50%) scale(.88)}
 .c-subtitle{font-size:.8rem;color:var(--t3);line-height:1.75;margin-bottom:1.75rem;font-weight:300}
 
 /* Changes modal */
-.ch-overlay{position:fixed;inset:0;z-index:300;background:rgba(26,22,18,0);pointer-events:none;transition:background 200ms;display:flex;align-items:flex-end;justify-content:center}
-.ch-overlay.on{background:rgba(0,0,0,.6);pointer-events:all}
+.ch-overlay{position:fixed;inset:0;z-index:300;background:rgba(26,22,18,0);pointer-events:none;transition:background 200ms var(--spring);display:flex;align-items:flex-end;justify-content:center}
+.ch-overlay.on{background:rgba(26,22,18,.8);pointer-events:auto;backdrop-filter:blur(6px)}
 .ch-sheet{width:100%;max-width:520px;background:var(--bg2);border-radius:14px 14px 0 0;padding:1.35rem 1.75rem 2rem;transform:translateY(110%);transition:transform 360ms var(--spring);border-top:1px solid var(--line2);box-shadow:0 -8px 40px rgba(0,0,0,.6)}
 .ch-overlay.on .ch-sheet{transform:translateY(0)}
 .ch-drag{width:2.25rem;height:3px;background:var(--line2);border-radius:2px;margin:0 auto 1.35rem}
@@ -548,11 +548,11 @@ body.cc #cur-t{transform:translate(-50%,-50%) scale(.88)}
 .ch-cancel{width:100%;background:none;border:none;color:var(--t3);font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;padding:.75rem;cursor:auto;margin-top:.25rem}
 
 /* Toast */
-.toast{position:fixed;top:5rem;left:50%;transform:translateX(-50%) translateY(-14px);padding:.65rem 1.4rem;font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.1em;z-index:900;opacity:0;pointer-events:none;transition:all 260ms var(--spring);white-space:nowrap;border-radius:6px;max-width:calc(100vw - 2rem);text-align:center}
+.toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.92);padding:.9rem 2rem;font-family:'DM Mono',monospace;font-size:.7rem;letter-spacing:.1em;z-index:1000;opacity:0;pointer-events:none;transition:all 280ms var(--spring);white-space:pre-line;border-radius:8px;max-width:calc(100vw - 3rem);text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.6)}
 .toast.admin{background:var(--glass2);color:var(--gold);border:1px solid var(--goldB);backdrop-filter:blur(16px)}
-.toast.success{background:var(--greenL);color:var(--green);border:1px solid var(--greenB)}
+.toast.success{background:#0f2a1a;color:#4ADE80;border:1px solid #4ADE80;font-size:.75rem}
 .toast.error{background:var(--roseL);color:var(--rose);border:1px solid var(--roseB)}
-.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
 
 
 /* Long press hint */
@@ -1420,10 +1420,50 @@ async function analyzeAI(){
     showToast("Patron checkerboard aplicado","success");
   }
   // Generate captions for posts without one
+  // Asignar fechas óptimas a posts sin fecha
+  assignOptimalDates();
   await generateCaptionsForNew();
   btn.disabled=false;btn.classList.remove("loading");
   btn.innerHTML=SVG+" Analizar con IA";
 }
+
+function assignOptimalDates(){
+  var ps=posts[curClient]||[];
+  // Optimal posting days/times for Instagram florist
+  var slots=[
+    {day:1,h:'18:00'},{day:1,h:'19:00'},  // Lunes
+    {day:3,h:'12:00'},{day:3,h:'18:30'},  // Miércoles
+    {day:5,h:'18:00'},{day:5,h:'19:30'},  // Viernes
+    {day:2,h:'11:00'},{day:2,h:'19:00'},  // Martes
+    {day:4,h:'12:00'},{day:4,h:'18:00'},  // Jueves
+    {day:6,h:'10:00'},{day:6,h:'11:30'},  // Sábado
+  ];
+  var months=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  var today=new Date();
+  var slotIdx=0;
+  // Find next available slot starting tomorrow
+  var cursor=new Date(today);
+  cursor.setDate(cursor.getDate()+1);
+  ps.forEach(function(p){
+    if(p.date) return; // skip if already has date
+    // Find next slot
+    while(true){
+      var dow=cursor.getDay(); // 0=Sun,1=Mon...
+      var slot=slots.find(function(s){return s.day===dow});
+      if(slot){
+        p.date=cursor.getDate()+' '+months[cursor.getMonth()]+' · '+slot.h;
+        cursor.setDate(cursor.getDate()+2); // skip to next valid day
+        break;
+      }else{
+        cursor.setDate(cursor.getDate()+1);
+      }
+    }
+  });
+  saveState();
+  renderAdmin();
+  showToast('Fechas óptimas asignadas','success');
+}
+
 
 // CALENDAR
 var calYear=new Date().getFullYear(),calMonth=new Date().getMonth();
@@ -1761,86 +1801,85 @@ async function generateCaptionsForNew(){
   var ps=posts[curClient]||[];
   var toGenerate=ps.filter(function(p){return !p.caption||p.caption.trim()===""||p.caption==="Sin caption"});
   if(!toGenerate.length){showToast("Todos los posts ya tienen caption","admin");return}
-  showToast("Analizando "+toGenerate.length+" imagenes con IA...","admin");
-  var bizType=curClient==="sarai"?"floristeria artesanal en Barcelona. Tienda de confianza desde 1988":"barberia profesional en Barcelona";
+  showToast("Analizando "+toGenerate.length+" imagen"+(toGenerate.length>1?"es":"")+" con IA...","admin");
+  var bizType=curClient==="sarai"?"floristeria artesanal en Barcelona. Tienda familiar desde 1988":"barberia profesional en Barcelona";
+  // Collect existing captions to avoid repetition
+  var existingCaptions=(posts[curClient]||[]).filter(function(p){return p.caption&&p.caption.length>10}).map(function(p){return p.caption.slice(0,60)}).join(' | ');
   for(var i=0;i<toGenerate.length;i++){
     var p=toGenerate[i];
     var caption="";
-    // Build message: send the actual image so Claude can SEE it
     var msgContent=[];
-    if(p.url&&p.url.startsWith("data:image")){
-      // Resize to max 256px before sending (works on mobile too)
-      await new Promise(function(resolve){
-        makeThumbnail(p.url, 256, 0.8, function(thumb){
-          var parts=thumb.split(",");
-          var mimeMatch=parts[0].match(/data:(image\/[^;]+)/);
-          var mime=mimeMatch?mimeMatch[1]:"image/jpeg";
-          msgContent.push({type:"image",source:{type:"base64",media_type:mime,data:parts[1]}});
-          resolve();
+    // Send actual image via Vision if available
+    if(p.url&&(p.url.startsWith("data:image")||p.url.startsWith("http"))){
+      if(p.url.startsWith("data:image")){
+        await new Promise(function(resolve){
+          makeThumbnail(p.url,384,0.85,function(thumb){
+            var parts=thumb.split(",");
+            var mimeMatch=parts[0].match(/data:(image\/[^;]+)/);
+            var mime=mimeMatch?mimeMatch[1]:"image/jpeg";
+            msgContent.push({type:"image",source:{type:"base64",media_type:mime,data:parts[1]}});
+            resolve();
+          });
         });
-      });
+      }else{
+        // Public URL — send as url_source
+        msgContent.push({type:"image",source:{type:"url",url:p.url}});
+      }
     }
+    var seed=Math.floor(Math.random()*9999);
+    var avoidText=existingCaptions.length>10?" EVITA repetir estas frases ya usadas: "+existingCaptions.slice(0,200):"";
     msgContent.push({
       type:"text",
-      text:"Eres el community manager de una "+bizType+". Mira esta imagen y escribe el caption de Instagram. INSTRUCCIONES: 1) Describe lo que ves de forma poetica y atractiva en espanol (1-2 frases con emojis). 2) Linea en blanco. 3) Exactamente 10-12 hashtags relevantes mezclando espanol e ingles (#floristeria #flowers #barcelona etc). NO uses el mismo texto que otras veces — se creativo y especifico a esta imagen. Devuelve SOLO el caption, sin explicaciones."
+      text:"Eres community manager experto en Instagram para una "+bizType+". ANALIZA esta imagen con detalle y escribe un caption UNICO y CREATIVO (seed:"+seed+"). REGLAS ESTRICTAS: 1) Identifica exactamente que hay en la imagen (flor especifica, planta, ramo, color) y mencionalo. 2) Escribe 1-2 frases poeticas en espanol con 1-2 emojis relevantes. 3) Salta una linea. 4) Escribe 10-12 hashtags en espanol e ingles especificos al contenido. 5) Devuelve SOLO el texto del caption, sin explicaciones."+avoidText
     });
     try{
       var res=await fetch("https://api.anthropic.com/v1/messages",{
         method:"POST",
         headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({
-          model:"claude-sonnet-4-20250514",
-          max_tokens:300,
-          messages:[{role:"user",content:msgContent}]
-        })
+        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:320,messages:[{role:"user",content:msgContent}]})
       });
       var raw=await res.text();
       var data;
-      try{data=JSON.parse(raw)}catch(pe){console.warn("JSON parse:",raw.slice(0,150));data=null}
+      try{data=JSON.parse(raw)}catch(pe){data=null}
       if(data&&res.ok&&data.content&&data.content[0]&&data.content[0].text){
         caption=data.content[0].text.trim();
+        // Update existing captions list to avoid next post repeating
+        existingCaptions+=(" | "+caption.slice(0,60));
       }else{
-        console.warn("API issue ("+res.status+"):",raw.slice(0,200));
-        // Fallback: text-only request (no image)
-        caption=await generateCaptionTextOnly(p,bizType);
+        caption=await generateCaptionTextOnly(p,bizType,seed);
       }
     }catch(e){
-      console.warn("Fetch error:",e.message);
-      caption=await generateCaptionTextOnly(p,bizType);
+      caption=await generateCaptionTextOnly(p,bizType,seed);
     }
     if(caption){
       p.caption=caption;
       var ta=document.querySelector("textarea[data-id=\""+p.id+"\"]");
       if(ta)ta.value=caption;
-      // Live update: re-render just this card caption in client view
-      if(role==="client"){
-        var overlay=document.querySelector(".c-post-card[data-id=\""+p.id+"\"] .c-card-caption");
-        if(overlay)overlay.textContent=caption;
-      }
+      var captEl=document.querySelector(".c-post-card[data-id=\""+p.id+"\"] .c-card-caption");
+      if(captEl)captEl.textContent=caption;
     }
-    if(i<toGenerate.length-1)await new Promise(function(r){setTimeout(r,900)})
+    if(i<toGenerate.length-1)await new Promise(function(r){setTimeout(r,800)})
   }
-  saveStateAsync();
+  saveState();
   renderAdmin();
   if(role==="client")renderClientList();
-  showToast(toGenerate.length+" caption"+(toGenerate.length>1?"s":"")+" generados con IA","success")
+  showToast(toGenerate.length+" caption"+(toGenerate.length>1?"s":"")+" generados","success")
 }
 
-async function generateCaptionTextOnly(p,bizType){
-  // Fallback: describe based on color tone + random seed for variety
-  var seed=Date.now()+Math.random();
+async function generateCaptionTextOnly(p,bizType,seed){
+  seed=seed||Math.floor(Math.random()*9999);
   var toneHints={
-    warm:"flores de colores calidos (rosas, naranja, amarillo, rojo) o ramo vibrante",
-    cool:"flores en tonos suaves (azul, lila, blanco, malva) o planta verde fresca",
-    neutral:"composicion floral natural (verde, blanco, beige) o planta de interior"
+    warm:"ramo de flores con colores calidos vibrantes (rosas, naranjas, rojos, amarillos)",
+    cool:"flores o planta en tonos suaves y frios (azules, malvas, blancos, verdes)",
+    neutral:"composicion floral natural (verdes, blancos, beige)"
   };
   var hint=toneHints[p.tone||"neutral"];
-  var prompt="Eres community manager de una "+bizType+". Imagina una foto de "+hint+". Escribe un caption UNICO y CREATIVO para Instagram (seed variedad: "+Math.floor(seed%1000)+"). FORMATO: 1-2 frases poeticas en espanol con emojis, salto de linea, 10-12 hashtags en espanol e ingles. Solo el texto.";
+  var prompt="Eres community manager de una "+bizType+". Crea un caption UNICO para Instagram sobre "+hint+" (variante "+seed+"). Formato: 1-2 frases poeticas en espanol + emojis, salto de linea, 10-12 hashtags. Solo el texto.";
   try{
     var res=await fetch("https://api.anthropic.com/v1/messages",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:250,messages:[{role:"user",content:prompt}]})
+      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:280,messages:[{role:"user",content:prompt}]})
     });
     var raw=await res.text();
     var data=JSON.parse(raw);
@@ -1864,21 +1903,37 @@ function renderClientCalendar(){
   var dows=qs('#cCalDows'),grid=qs('#cCalGrid'),title=qs('#cCalTitle');
   if(!dows||!grid)return;
   var now=new Date();
-  if(title)title.textContent=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'][now.getMonth()]+' '+now.getFullYear();
-  dows.innerHTML='';['L','M','X','J','V','S','D'].forEach(function(d){var el=document.createElement('div');el.className='c-cal-dow';el.textContent=d;dows.appendChild(el)});
+  var months=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  var monthsShort=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  if(title)title.textContent=months[now.getMonth()]+' '+now.getFullYear();
+  dows.innerHTML='';
+  ['L','M','X','J','V','S','D'].forEach(function(d){
+    var el=document.createElement('div');el.className='c-cal-dow';el.textContent=d;dows.appendChild(el);
+  });
   grid.innerHTML='';
   var first=new Date(now.getFullYear(),now.getMonth(),1).getDay();
   var days=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
   var offset=(first+6)%7;
   var ps=posts[curClient]||[];
-  for(var i=0;i<offset;i++){var el=document.createElement('div');el.className='cal-day empty';el.innerHTML='<div class="cal-day-inner"><span class="cal-day-num"></span></div>';grid.appendChild(el)}
+  // Parse day number from date string like "15 Jun · 18:00" or "15 Ene · 19:00"
+  function parseDayFromDate(dateStr){
+    if(!dateStr)return null;
+    var m=dateStr.match(/^(\d+)\s/);
+    return m?parseInt(m[1]):null;
+  }
+  for(var i=0;i<offset;i++){
+    var el=document.createElement('div');el.className='cal-day empty';
+    el.innerHTML='<div class="cal-day-inner"><span class="cal-day-num"></span></div>';
+    grid.appendChild(el);
+  }
   for(var d=1;d<=days;d++){
     var el=document.createElement('div');el.className='cal-day';
     if(now.getDate()===d)el.classList.add('today');
-    var dayPost=ps.find(function(p){return p.date&&p.date.includes(' '+d+' ')});
-    if(dayPost){
+    var dayPosts=ps.filter(function(p){return parseDayFromDate(p.date)===d});
+    if(dayPosts.length){
       el.classList.add('has-posts');
-      el.innerHTML='<div class="cal-day-inner"><div class="cal-day-thumb"><img src="'+dayPost.url+'" loading="lazy"></div><span class="cal-day-num">'+d+'</span></div>';
+      var firstPost=dayPosts[0];
+      el.innerHTML='<div class="cal-day-inner"><div class="cal-day-thumb"><img src="'+firstPost.url+'" loading="lazy" style="filter:brightness(1.1) saturate(1.15)"></div><span class="cal-day-num">'+d+'</span>'+(dayPosts.length>1?'<span class="cal-day-count">+'+dayPosts.length+'</span>':'')+'</div>';
     }else{
       el.innerHTML='<div class="cal-day-inner"><span class="cal-day-num" style="color:var(--t3)">'+d+'</span></div>';
     }
