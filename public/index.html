@@ -1261,39 +1261,33 @@ function handleUpload(e){
     var f=files[0];
     var reader=new FileReader();
     reader.onload=function(ev){
-      var url=ev.target.result;
-      getVideoDuration(f,function(dur){
-        posts[curClient].unshift({id:'v'+Date.now(),url:url,caption:'',date:'',tone:'neutral',brightness:.5,color:'#888',status:'pending',mediaType:curMT,duration:dur});
-        renderAdmin();
-        showToast('Video anadido','success');
-        generateCaptionsForNew();
-      });
+      posts[curClient].unshift({id:'v'+Date.now(),url:ev.target.result,caption:'',date:'',tone:'neutral',brightness:.5,color:'#888',status:'pending',mediaType:curMT});
+      renderAdmin();
+      showToast('Video anadido','success');
+      generateCaptionsForNew();
     };
     reader.readAsDataURL(f);
     e.target.value='';
     return;
   }
-  // Images: read locally first, then upload to imgbb for public URL
   var loaded=0;
+  var newPosts=[];
   files.forEach(function(f,fi){
     var reader=new FileReader();
     reader.onload=function(ev){
       var localUrl=ev.target.result;
       analyzeColor(localUrl,function(tone,br,color){
-        var postId='u'+Date.now()+'_'+fi;
-        // Add with local URL first so admin sees it immediately
-        posts[curClient].unshift({
-          id:postId,url:localUrl,caption:'',date:'',
-          tone:tone,brightness:br,color:color,
-          status:'pending',mediaType:'image'
-        });
+        var post={id:'u'+Date.now()+'_'+fi,url:localUrl,caption:'',date:'',tone:tone,brightness:br,color:color,status:'pending',mediaType:'image'};
+        newPosts.push(post);
+        posts[curClient].unshift(post);
         loaded++;
         if(loaded===files.length){
           renderAdmin();
-          showToast(files.length+' foto'+(files.length>1?'s':'')+' anadida'+(files.length>1?'s':''),'success');
-          generateCaptionsForNew();
-          // Upload all to imgbb for public URLs (enables Firebase sync)
-          uploadAllToImgbb();
+          showToast(files.length+' foto'+(files.length>1?'s':'')+' subiendo...','admin');
+          // Subir a imgbb primero, luego guardar en Firebase
+          uploadToImgbbAndSync(newPosts, function(){
+            generateCaptionsForNew();
+          });
         }
       });
     };
@@ -1302,36 +1296,42 @@ function handleUpload(e){
   e.target.value='';
 }
 
-function uploadAllToImgbb(){
-  var key=metaCreds.imgbbKey||'ee5e39579cd0ceb0fc752c337656f549';
-  var ps=posts[curClient]||[];
-  var uploaded=0;
-  ps.forEach(function(p){
-    if(p.url&&p.url.startsWith('data:image')&&p.mediaType==='image'){
-      var b64=p.url.split(',')[1];
-      var fd=new FormData();
-      fd.append('key',key);
-      fd.append('image',b64);
-      fetch('https://api.imgbb.com/1/upload',{method:'POST',body:fd})
-      .then(function(r){return r.json()})
-      .then(function(data){
-        if(data&&data.success&&data.data&&data.data.url){
-          p.url=data.data.url;
-          uploaded++;
-          // update visible img tag
-          var cards=document.querySelectorAll('.qcard-img img');
-          cards.forEach(function(img){
-            if(img.src&&img.src.startsWith('data:'))img.src=p.url;
-          });
-          saveState();
-          console.log('imgbb OK:',p.id,p.url);
-        }else{
-          console.warn('imgbb fail:',JSON.stringify(data).slice(0,100));
-        }
-      })
-      .catch(function(e){console.warn('imgbb error:',e.message)});
-    }
+function uploadToImgbbAndSync(newPosts, callback){
+  var key='ee5e39579cd0ceb0fc752c337656f549';
+  var pending=newPosts.filter(function(p){return p.url&&p.url.startsWith('data:image')});
+  if(!pending.length){saveState();if(callback)callback();return;}
+  var done=0;
+  pending.forEach(function(p){
+    var b64=p.url.split(',')[1];
+    var fd=new FormData();
+    fd.append('key',key);
+    fd.append('image',b64);
+    fetch('https://api.imgbb.com/1/upload',{method:'POST',body:fd})
+    .then(function(r){return r.json()})
+    .then(function(data){
+      if(data&&data.success&&data.data&&data.data.url){
+        p.url=data.data.url;
+        console.log('imgbb OK:',p.id,p.url);
+      }else{
+        console.warn('imgbb fail para',p.id,':',JSON.stringify(data).slice(0,80));
+      }
+    })
+    .catch(function(err){console.warn('imgbb error:',err.message)})
+    .finally(function(){
+      done++;
+      if(done===pending.length){
+        // Todas terminadas — guardar en Firebase con URLs públicas
+        saveState();
+        showToast('Fotos listas y sincronizadas','success');
+        renderAdmin();
+        if(callback)callback();
+      }
+    });
   });
+}
+
+function uploadAllToImgbb(){
+  uploadToImgbbAndSync(posts[curClient]||[],null);
 }
 
 function analyzeColor(src,cb){
@@ -1801,86 +1801,78 @@ async function generateCaptionsForNew(){
   var ps=posts[curClient]||[];
   var toGenerate=ps.filter(function(p){return !p.caption||p.caption.trim()===""||p.caption==="Sin caption"});
   if(!toGenerate.length){showToast("Todos los posts ya tienen caption","admin");return}
-  showToast("Analizando "+toGenerate.length+" imagen"+(toGenerate.length>1?"es":"")+" con IA...","admin");
-  var bizType=curClient==="sarai"?"floristeria artesanal en Barcelona. Tienda familiar desde 1988":"barberia profesional en Barcelona";
-  var existingCaptions=(posts[curClient]||[]).filter(function(p){return p.caption&&p.caption.length>10}).map(function(p){return p.caption.slice(0,80)}).join(" | ");
+  showToast("Generando captions con IA...","admin");
+  var bizType=curClient==="sarai"?"floristeria artesanal en Barcelona, Tienda familiar desde 1988":"barberia profesional en Barcelona";
+  var usedCaptions=[];
+  // Recopilar captions ya existentes para evitar repeticion
+  ps.forEach(function(p){if(p.caption&&p.caption.length>20)usedCaptions.push(p.caption.slice(0,60))});
   for(var i=0;i<toGenerate.length;i++){
     var p=toGenerate[i];
-    var caption="";
+    var seed=Date.now()+i*1000+Math.floor(Math.random()*9999);
     var msgContent=[];
-    var seed=Math.floor(Math.random()*99999);
-    var imageReady=false;
-    // ── Convertir imagen a base64 via canvas (funciona con data: y http:) ──
+    var hasImage=false;
+    // Convertir imagen a base64 via canvas (funciona con data: y http:)
     if(p.url){
-      await new Promise(function(resolve){
+      hasImage=await new Promise(function(resolve){
         var img=new Image();
         img.crossOrigin="anonymous";
         img.onload=function(){
           try{
-            var maxPx=384;
-            var scale=Math.min(1,maxPx/Math.max(img.width,img.height));
-            var w=Math.round(img.width*scale),h=Math.round(img.height*scale);
+            var maxPx=512;
+            var scale=Math.min(1,maxPx/Math.max(img.width||1,img.height||1));
+            var w=Math.round((img.width||512)*scale);
+            var h=Math.round((img.height||512)*scale);
             var canvas=document.createElement("canvas");
             canvas.width=w;canvas.height=h;
             var ctx=canvas.getContext("2d");
             ctx.drawImage(img,0,0,w,h);
-            var dataUrl=canvas.toDataURL("image/jpeg",0.82);
-            var b64=dataUrl.split(",")[1];
+            var b64=canvas.toDataURL("image/jpeg",0.85).split(",")[1];
             msgContent.push({type:"image",source:{type:"base64",media_type:"image/jpeg",data:b64}});
-            imageReady=true;
-          }catch(e){console.warn("Canvas error:",e.message)}
-          resolve();
+            resolve(true);
+          }catch(err){console.warn("Canvas error:",err.message);resolve(false);}
         };
-        img.onerror=function(){
-          console.warn("Image load failed:",p.url.slice(0,60));
-          resolve();
-        };
-        // Para base64 no hace falta crossOrigin
+        img.onerror=function(){console.warn("Img load error:",p.url.slice(0,50));resolve(false);};
         if(p.url.startsWith("data:"))img.crossOrigin=null;
-        img.src=p.url;
-        // Timeout por si la imagen tarda demasiado
-        setTimeout(function(){if(!imageReady)resolve();},5000);
+        img.src=p.url+"?cb="+seed;
+        setTimeout(function(){resolve(false);},6000);
       });
     }
-    var avoidText=existingCaptions.length>10?" NUNCA uses estas frases ya escritas: "+existingCaptions.slice(0,300):"";
+    var avoidText=usedCaptions.length>0?" PROHIBIDO repetir o parafrasear estas frases ya usadas: ["+usedCaptions.join(" / ")+"]":"";
     msgContent.push({
       type:"text",
-      text:"Eres community manager experto en Instagram para una "+bizType+". "+(imageReady?"MIRA la imagen adjunta con mucho detalle. ":"")+"Escribe un caption UNICO (ref:"+seed+") para Instagram. REGLAS: 1) "+(imageReady?"Identifica exactamente que hay (nombre de la flor, color, tipo de ramo/planta) y mencionalo especificamente. ":"Crea texto original creativo sobre flores de temporada en Barcelona. ")+"2) Escribe 1-2 frases poeticas en espanol con emojis. 3) Linea en blanco. 4) Exactamente 10-12 hashtags especificos al contenido. 5) Devuelve SOLO el texto del caption, sin explicaciones ni comillas."+avoidText
+      text:"Eres el community manager de una "+bizType+"."+(hasImage?" Analiza la imagen adjunta con precision: identifica el tipo exacto de flor o planta, sus colores especificos, el tipo de ramo o composicion.":" Crea contenido creativo sobre flores de temporada.")+" Escribe UN caption original unico para Instagram (ID unico:"+seed+"). FORMATO OBLIGATORIO: Linea 1-2: descripcion poetica en espanol mencionando lo que ves especificamente (con 1-2 emojis). Linea 3: vacia. Linea 4-5: 10 hashtags relevantes en espanol e ingles. DEVUELVE SOLO EL TEXTO DEL CAPTION."+avoidText
     });
+    var caption="";
     try{
       var res=await fetch("/api/claude",{
         method:"POST",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:350,messages:[{role:"user",content:msgContent}]})
       });
-      var raw=await res.text();
-      var data;
-      try{data=JSON.parse(raw)}catch(pe){console.warn("JSON parse error:",raw.slice(0,100));data=null}
-      if(data&&res.ok&&data.content&&data.content[0]&&data.content[0].text){
+      var data=await res.json();
+      if(res.ok&&data.content&&data.content[0]&&data.content[0].text){
         caption=data.content[0].text.trim();
-        existingCaptions+=" | "+caption.slice(0,80);
-        console.log("Caption OK para",p.id,"(vision:",imageReady,")");
+        usedCaptions.push(caption.slice(0,60));
+        console.log("Caption OK (vision:"+hasImage+") para",p.id);
       }else{
-        console.warn("API fail ("+res.status+"):",raw.slice(0,150));
-        caption=await generateCaptionTextOnly(p,bizType,seed);
+        console.warn("API error:",data.error||data);
+        caption=getCaptionFallback(p.tone);
       }
-    }catch(e){
-      console.warn("Fetch error:",e.message);
-      caption=await generateCaptionTextOnly(p,bizType,seed);
+    }catch(err){
+      console.warn("Caption error:",err.message);
+      caption=getCaptionFallback(p.tone);
     }
-    if(caption){
-      p.caption=caption;
-      var ta=document.querySelector("textarea[data-id=\""+p.id+"\"]");
-      if(ta)ta.value=caption;
-      var captEl=document.querySelector(".c-post-card[data-id=\""+p.id+"\"] .c-card-caption");
-      if(captEl)captEl.textContent=caption;
-    }
-    if(i<toGenerate.length-1)await new Promise(function(r){setTimeout(r,1000)})
+    p.caption=caption;
+    var ta=document.querySelector("textarea[data-id=\""+p.id+"\"]");
+    if(ta)ta.value=caption;
+    var captEl=document.querySelector(".c-post-card[data-id=\""+p.id+"\"] .c-card-caption");
+    if(captEl)captEl.textContent=caption;
+    if(i<toGenerate.length-1)await new Promise(function(r){setTimeout(r,800)});
   }
   saveState();
   renderAdmin();
   if(role==="client")renderClientList();
-  showToast(toGenerate.length+" caption"+(toGenerate.length>1?"s":"")+" generados","success")
+  showToast(toGenerate.length+" caption"+(toGenerate.length>1?"s":"")+" listos","success");
 }
 
 async function generateCaptionTextOnly(p,bizType,seed){
