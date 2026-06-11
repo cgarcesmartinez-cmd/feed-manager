@@ -1835,7 +1835,16 @@ async function generateCaptionsForNew(){
       });
     }
     var avoidText=usedCaptions.length>0?" NO repitas ni parafrasees: ["+usedCaptions.slice(-5).join(" / ")+"]":"";
-    var promptText="Actua como un experto en redes sociales. "+(hasImage?"Analiza esta imagen y crea":"Crea")+" una publicacion para Instagram. FORMATO OBLIGATORIO: 1) Titulo atractivo con 1-2 emojis relevantes a lo que ves. 2) Parrafo de 2-3 frases que conecte emocionalmente con el contenido, en espanol, tono inspirador y cercano. 3) CTA corto: ej. Visita nuestra tienda, Reserva ahora, Etiqueta a alguien especial. 4) 5 hashtags relevantes en espanol e ingles. DEVUELVE SOLO EL TEXTO sin explicaciones. Seed:"+seed+"."+avoidText;
+    var promptText="Actua como experto en redes sociales. "+(hasImage?"Analiza esta imagen y crea":"Crea")+" una publicacion para Instagram en espanol. "+
+      "REGLAS ESTRICTAS: "+
+      "1) PROHIBIDO usar asteriscos, guiones, markdown, negritas ni corchetes. Solo texto plano. "+
+      "2) PROHIBIDO escribir palabras como Titulo, CTA, Hashtags antes del contenido. "+
+      "3) FORMATO EXACTO que debes seguir (4 partes separadas por salto de linea): "+
+      "PARTE 1: Una frase corta y atractiva con 1-2 emojis que resuma la imagen. "+
+      "PARTE 2: 2-3 frases que conecten emocionalmente con el contenido, tono inspirador. "+
+      "PARTE 3: Una frase de llamada a la accion, ej: Visita nuestra tienda, Reserva ahora, Etiqueta a alguien especial. "+
+      "PARTE 4: 5 hashtags relevantes en espanol e ingles sin salto de linea entre ellos. "+
+      "Seed:"+seed+"."+avoidText;
     msgContent.push({type:"text",text:promptText});
     var caption="";
     try{
@@ -1846,7 +1855,21 @@ async function generateCaptionsForNew(){
       });
       var data=await res.json();
       if(res.ok&&data.content&&data.content[0]&&data.content[0].text){
-        caption=data.content[0].text.trim();
+        // ── Fix 2: limpiar markdown del texto devuelto ──
+        var raw=data.content[0].text.trim();
+        var clean=raw
+          .replace(/\*\*(.*?)\*\*/g,"$1")   // **negrita** → texto
+          .replace(/\*(.*?)\*/g,"$1")        // *cursiva* → texto
+          .replace(/^#+\s*/gm,"")            // # titulos → sin #
+          .replace(/^[-–]\s*/gm,"")          // - listas → sin guion
+          .replace(/\[([^\]]+)\]/g,"$1")     // [texto] → texto
+          .replace(/Titulo:\s*/gi,"")         // "Titulo:" → eliminar
+          .replace(/CTA:\s*/gi,"")            // "CTA:" → eliminar
+          .replace(/Hashtags:\s*/gi,"")       // "Hashtags:" → eliminar
+          .replace(/Llamada a la accion:\s*/gi,"")
+          .replace(/\n{3,}/g,"\n\n")          // 3+ saltos → 2 saltos
+          .trim();
+        caption=clean;
         usedCaptions.push(caption.slice(0,60));
         console.log("Caption OK vision:"+hasImage+" id:"+p.id.slice(0,8));
       }else{
