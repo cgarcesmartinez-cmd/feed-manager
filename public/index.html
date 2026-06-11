@@ -487,7 +487,7 @@ body.cc #cur-t{transform:translate(-50%,-50%) scale(.88)}
 .c-card-img img,.c-card-img video{width:100%;height:100%;object-fit:cover;display:block}
 .c-card-overlay{display:flex;flex-direction:column;padding:.65rem .7rem .6rem;background:var(--bg2);border-top:1px solid var(--line2);transition:all 200ms;border:2px solid transparent}
 .c-card-status-pill{font-family:'DM Mono',monospace;font-size:.45rem;letter-spacing:.1em;text-transform:uppercase;padding:.18rem .4rem;border-radius:3px;display:inline-flex;align-items:center;gap:.25rem;margin-bottom:.25rem;align-self:flex-start}
-.c-card-caption{font-size:.72rem;color:var(--cream);font-weight:300;line-height:1.5;margin-bottom:.55rem;word-break:break-word;max-height:5rem;overflow:hidden;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical}
+.c-card-caption{font-size:.75rem;color:var(--cream);font-weight:300;line-height:1.6;margin-bottom:.6rem;word-break:break-word;white-space:pre-line}
 .c-card-text-panel{background:rgba(10,8,6,.96);padding:.65rem .7rem .5rem;border-top:1px solid rgba(201,168,76,.15)}
 .c-card-actions{display:flex;gap:.25rem}
 .c-card-btn-ok{background:var(--grad-gold);color:var(--bg);border:none;font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;padding:.45rem .8rem;border-radius:4px;cursor:auto;transition:all 140ms;white-space:nowrap;flex:1}
@@ -1802,11 +1802,17 @@ async function generateCaptionsForNew(){
   var toGenerate=ps.filter(function(p){return !p.caption||p.caption.trim()===""||p.caption==="Sin caption"});
   if(!toGenerate.length){showToast("Todos los posts ya tienen caption","admin");return}
   showToast("Generando captions con IA...","admin");
-  var usedCaptions=[];
-  ps.forEach(function(p){if(p.caption&&p.caption.length>20)usedCaptions.push(p.caption.slice(0,60))});
+  // Recopilar primeras líneas de captions existentes para anti-repetición
+  var usedFirstLines=[];
+  ps.forEach(function(p){
+    if(p.caption&&p.caption.length>10){
+      var firstLine=p.caption.split("\n")[0].trim().slice(0,50);
+      if(firstLine)usedFirstLines.push(firstLine);
+    }
+  });
   for(var i=0;i<toGenerate.length;i++){
     var p=toGenerate[i];
-    var seed=Date.now()+i*1000+Math.floor(Math.random()*9999);
+    var seed=Date.now()+i*1337+Math.floor(Math.random()*99999);
     var msgContent=[];
     var hasImage=false;
     if(p.url){
@@ -1834,43 +1840,49 @@ async function generateCaptionsForNew(){
         setTimeout(function(){resolve(false);},8000);
       });
     }
-    var avoidText=usedCaptions.length>0?" NO repitas ni parafrasees: ["+usedCaptions.slice(-5).join(" / ")+"]":"";
-    var promptText="Actua como experto en redes sociales. "+(hasImage?"Analiza esta imagen y crea":"Crea")+" una publicacion para Instagram en espanol. "+
-      "REGLAS ESTRICTAS: "+
-      "1) PROHIBIDO usar asteriscos, guiones, markdown, negritas ni corchetes. Solo texto plano. "+
-      "2) PROHIBIDO escribir palabras como Titulo, CTA, Hashtags antes del contenido. "+
-      "3) FORMATO EXACTO que debes seguir (4 partes separadas por salto de linea): "+
-      "PARTE 1: Una frase corta y atractiva con 1-2 emojis que resuma la imagen. "+
-      "PARTE 2: 2-3 frases que conecten emocionalmente con el contenido, tono inspirador. "+
-      "PARTE 3: Una frase de llamada a la accion, ej: Visita nuestra tienda, Reserva ahora, Etiqueta a alguien especial. "+
-      "PARTE 4: 5 hashtags relevantes en espanol e ingles sin salto de linea entre ellos. "+
-      "Seed:"+seed+"."+avoidText;
+    var avoidText=usedFirstLines.length>0
+      ?" ESTAS FRASES YA ESTAN USADAS, usa algo completamente diferente: "+usedFirstLines.join(" | ")
+      :"";
+    var promptText="Actua como experto en redes sociales. "
+      +(hasImage?"Analiza esta imagen y crea":"Crea")
+      +" una publicacion UNICA para Instagram en espanol (variante "+seed+"). "
+      +"REGLAS: 1) PROHIBIDO asteriscos, guiones, markdown, negritas. Solo texto plano. "
+      +"2) PROHIBIDO palabras como Titulo, CTA, Hashtags antes del contenido. "
+      +"3) Cada publicacion debe tener titulo, cuerpo, CTA y hashtags COMPLETAMENTE DISTINTOS a las anteriores. "
+      +"4) FORMATO (4 partes separadas por una linea en blanco): "
+      +"Parte1: Titulo corto y unico con 1-2 emojis relevantes a la imagen. "
+      +"Parte2: 2-3 frases que conecten emocionalmente, tono inspirador. "
+      +"Parte3: CTA unico y especifico, ej: Visita nuestra tienda, Reserva ahora, Etiqueta a alguien. "
+      +"Parte4: 5 hashtags relevantes en espanol e ingles. "
+      +"DEVUELVE SOLO EL TEXTO."+avoidText;
     msgContent.push({type:"text",text:promptText});
     var caption="";
     try{
       var res=await fetch("/api/claude",{
         method:"POST",
         headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({model:"meta-llama/llama-4-scout-17b-16e-instruct",max_tokens:400,messages:[{role:"user",content:msgContent}]})
+        body:JSON.stringify({model:"meta-llama/llama-4-scout-17b-16e-instruct",max_tokens:450,messages:[{role:"user",content:msgContent}]})
       });
       var data=await res.json();
       if(res.ok&&data.content&&data.content[0]&&data.content[0].text){
-        // ── Fix 2: limpiar markdown del texto devuelto ──
         var raw=data.content[0].text.trim();
         var clean=raw
-          .replace(/\*\*(.*?)\*\*/g,"$1")   // **negrita** → texto
-          .replace(/\*(.*?)\*/g,"$1")        // *cursiva* → texto
-          .replace(/^#+\s*/gm,"")            // # titulos → sin #
-          .replace(/^[-–]\s*/gm,"")          // - listas → sin guion
-          .replace(/\[([^\]]+)\]/g,"$1")     // [texto] → texto
-          .replace(/Titulo:\s*/gi,"")         // "Titulo:" → eliminar
-          .replace(/CTA:\s*/gi,"")            // "CTA:" → eliminar
-          .replace(/Hashtags:\s*/gi,"")       // "Hashtags:" → eliminar
+          .replace(/\*\*(.*?)\*\*/g,"$1")
+          .replace(/\*(.*?)\*/g,"$1")
+          .replace(/^#+\s*/gm,"")
+          .replace(/^[-–]\s*/gm,"")
+          .replace(/\[([^\]]+)\]/g,"$1")
+          .replace(/Titulo:\s*/gi,"")
+          .replace(/CTA:\s*/gi,"")
+          .replace(/Hashtags:\s*/gi,"")
           .replace(/Llamada a la accion:\s*/gi,"")
-          .replace(/\n{3,}/g,"\n\n")          // 3+ saltos → 2 saltos
+          .replace(/Parte\s*\d+:\s*/gi,"")
+          .replace(/\n{3,}/g,"\n\n")
           .trim();
         caption=clean;
-        usedCaptions.push(caption.slice(0,60));
+        // Guardar primera línea para evitar repetición en siguiente post
+        var firstLine=clean.split("\n")[0].trim().slice(0,50);
+        if(firstLine)usedFirstLines.push(firstLine);
         console.log("Caption OK vision:"+hasImage+" id:"+p.id.slice(0,8));
       }else{
         console.warn("API fail:",JSON.stringify(data).slice(0,120));
