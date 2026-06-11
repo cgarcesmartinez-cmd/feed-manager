@@ -1802,16 +1802,16 @@ async function generateCaptionsForNew(){
   var toGenerate=ps.filter(function(p){return !p.caption||p.caption.trim()===""||p.caption==="Sin caption"});
   if(!toGenerate.length){showToast("Todos los posts ya tienen caption","admin");return}
   showToast("Generando captions con IA...","admin");
-  var bizType=curClient==="sarai"?"floristeria artesanal en Barcelona, Tienda familiar desde 1988":"barberia profesional en Barcelona";
   var usedCaptions=[];
-  // Recopilar captions ya existentes para evitar repeticion
   ps.forEach(function(p){if(p.caption&&p.caption.length>20)usedCaptions.push(p.caption.slice(0,60))});
+
   for(var i=0;i<toGenerate.length;i++){
     var p=toGenerate[i];
     var seed=Date.now()+i*1000+Math.floor(Math.random()*9999);
     var msgContent=[];
     var hasImage=false;
-    // Convertir imagen a base64 via canvas (funciona con data: y http:)
+
+    // Convertir imagen a base64 via canvas
     if(p.url){
       hasImage=await new Promise(function(resolve){
         var img=new Image();
@@ -1823,56 +1823,77 @@ async function generateCaptionsForNew(){
             var w=Math.round((img.width||512)*scale);
             var h=Math.round((img.height||512)*scale);
             var canvas=document.createElement("canvas");
-            canvas.width=w;canvas.height=h;
+            canvas.width=w; canvas.height=h;
             var ctx=canvas.getContext("2d");
             ctx.drawImage(img,0,0,w,h);
             var b64=canvas.toDataURL("image/jpeg",0.85).split(",")[1];
             msgContent.push({type:"image",source:{type:"base64",media_type:"image/jpeg",data:b64}});
             resolve(true);
-          }catch(err){console.warn("Canvas error:",err.message);resolve(false);}
+          }catch(e){console.warn("Canvas:",e.message);resolve(false);}
         };
-        img.onerror=function(){console.warn("Img load error:",p.url.slice(0,50));resolve(false);};
+        img.onerror=function(){console.warn("ImgErr:",p.url.slice(0,50));resolve(false);};
         if(p.url.startsWith("data:"))img.crossOrigin=null;
-        img.src=p.url+"?cb="+seed;
-        setTimeout(function(){resolve(false);},6000);
+        img.src=p.url+(p.url.includes("?")?"&":"?")+"t="+seed;
+        setTimeout(function(){resolve(false);},8000);
       });
     }
-    var avoidText=usedCaptions.length>0?" PROHIBIDO repetir o parafrasear estas frases ya usadas: ["+usedCaptions.join(" / ")+"]":"";
-    msgContent.push({
-      type:"text",
-      text:"Eres el community manager de una "+bizType+"."+(hasImage?" Analiza la imagen adjunta con precision: identifica el tipo exacto de flor o planta, sus colores especificos, el tipo de ramo o composicion.":" Crea contenido creativo sobre flores de temporada.")+" Escribe UN caption original unico para Instagram (ID unico:"+seed+"). FORMATO OBLIGATORIO: Linea 1-2: descripcion poetica en espanol mencionando lo que ves especificamente (con 1-2 emojis). Linea 3: vacia. Linea 4-5: 10 hashtags relevantes en espanol e ingles. DEVUELVE SOLO EL TEXTO DEL CAPTION."+avoidText
-    });
+
+    var avoidText=usedCaptions.length>0?" NO repitas ni parafrasees: ["+usedCaptions.slice(-5).join(" / ")+"]":"";
+
+    if(hasImage){
+      // Con imagen: prompt neutro — la IA describe lo que VE sin sesgo de floristería
+      msgContent.push({
+        type:"text",
+        text:"Mira esta imagen y escribe un caption para Instagram. PASOS: 1) Identifica exactamente que hay en la imagen (objeto, animal, lugar, producto — sin asumir nada). 2) Escribe 1-2 frases creativas y atractivas en espanol sobre LO QUE VES REALMENTE, con 1-2 emojis apropiados al contenido. 3) Linea en blanco. 4) 10 hashtags especificos a lo que hay en la imagen en espanol e ingles. Devuelve SOLO el caption. Seed:"+seed+"."+avoidText
+      });
+    }else{
+      // Sin imagen: contexto del negocio
+      var bizType=curClient==="sarai"?"floristeria artesanal en Barcelona":"barberia profesional en Barcelona";
+      msgContent.push({
+        type:"text",
+        text:"Eres community manager de una "+bizType+". Crea un caption original para Instagram (seed:"+seed+"). 1-2 frases creativas en espanol + emojis, linea en blanco, 10 hashtags. Solo el texto."+avoidText
+      });
+    }
+
     var caption="";
     try{
       var res=await fetch("/api/claude",{
         method:"POST",
         headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:350,messages:[{role:"user",content:msgContent}]})
+        body:JSON.stringify({
+          model:"claude-sonnet-4-20250514",
+          max_tokens:400,
+          messages:[{role:"user",content:msgContent}]
+        })
       });
       var data=await res.json();
       if(res.ok&&data.content&&data.content[0]&&data.content[0].text){
         caption=data.content[0].text.trim();
         usedCaptions.push(caption.slice(0,60));
-        console.log("Caption OK (vision:"+hasImage+") para",p.id);
+        console.log("Caption OK vision:"+hasImage+" id:"+p.id.slice(0,8));
       }else{
-        console.warn("API error:",data.error||data);
+        console.warn("API fail:",JSON.stringify(data).slice(0,120));
         caption=getCaptionFallback(p.tone);
       }
-    }catch(err){
-      console.warn("Caption error:",err.message);
+    }catch(e){
+      console.warn("Fetch fail:",e.message);
       caption=getCaptionFallback(p.tone);
     }
+
     p.caption=caption;
+    // Actualizar UI en tiempo real
     var ta=document.querySelector("textarea[data-id=\""+p.id+"\"]");
     if(ta)ta.value=caption;
     var captEl=document.querySelector(".c-post-card[data-id=\""+p.id+"\"] .c-card-caption");
     if(captEl)captEl.textContent=caption;
-    if(i<toGenerate.length-1)await new Promise(function(r){setTimeout(r,800)});
+
+    if(i<toGenerate.length-1)await new Promise(function(r){setTimeout(r,900)});
   }
+
   saveState();
   renderAdmin();
   if(role==="client")renderClientList();
-  showToast(toGenerate.length+" caption"+(toGenerate.length>1?"s":"")+" listos","success");
+  showToast(toGenerate.length+" caption"+(toGenerate.length>1?"s":"")+" generados","success");
 }
 
 async function generateCaptionTextOnly(p,bizType,seed){
