@@ -483,24 +483,24 @@ body.cc #cur-t{transform:translate(-50%,-50%) scale(.88)}
 .c-nav-tab:hover:not(.on){color:var(--t2);border-color:var(--line3)}
 
 /* ── APPROVAL GRID ── */
-.c-card-img{width:100%;aspect-ratio:1/1;overflow:hidden;flex-shrink:0}.c-card-img img,.c-card-img video{width:100%;height:100%;object-fit:cover;display:block}
+.c-card-img{width:100%;aspect-ratio:4/3;overflow:hidden;flex-shrink:0;border-radius:8px 8px 0 0}.c-card-img img,.c-card-img video{width:100%;height:100%;object-fit:cover;display:block}
 .c-card-img img,.c-card-img video{width:100%;height:100%;object-fit:cover;display:block}
-.c-card-overlay{display:flex;flex-direction:column;padding:.65rem .7rem .6rem;background:var(--bg2);border-top:1px solid var(--line2);transition:all 200ms;border:2px solid transparent}
+.c-card-overlay{display:flex;flex-direction:column;padding:.9rem 1rem .85rem;background:var(--bg2);border-top:1px solid var(--line2);border-radius:0 0 8px 8px}
 .c-card-status-pill{font-family:'DM Mono',monospace;font-size:.45rem;letter-spacing:.1em;text-transform:uppercase;padding:.18rem .4rem;border-radius:3px;display:inline-flex;align-items:center;gap:.25rem;margin-bottom:.25rem;align-self:flex-start}
-.c-card-caption{font-size:.75rem;color:var(--cream);font-weight:300;line-height:1.6;margin-bottom:.6rem;word-break:break-word;white-space:pre-line}
+.c-card-caption{font-size:.82rem;color:var(--cream);font-weight:300;line-height:1.7;margin-bottom:.75rem;word-break:break-word;white-space:pre-line}
 .c-card-text-panel{background:rgba(10,8,6,.96);padding:.65rem .7rem .5rem;border-top:1px solid rgba(201,168,76,.15)}
 .c-card-actions{display:flex;gap:.25rem}
-.c-card-btn-ok{background:var(--grad-gold);color:var(--bg);border:none;font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;padding:.45rem .8rem;border-radius:4px;cursor:auto;transition:all 140ms;white-space:nowrap;flex:1}
+.c-card-btn-ok{background:var(--grad-gold);color:var(--bg);border:none;font-family:'DM Mono',monospace;font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;padding:.65rem 1rem;border-radius:6px;cursor:pointer;transition:all 140ms;white-space:nowrap;flex:1}
 .c-card-btn-ok.done{background:rgba(74,222,128,.25);color:#4ADE80;border:1px solid rgba(74,222,128,.5)}
-.c-card-btn-change{background:rgba(237,232,223,.12);color:var(--t2);border:1px solid var(--line2);font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;padding:.45rem .65rem;border-radius:4px;cursor:auto;transition:all 140ms;white-space:nowrap}
+.c-card-btn-change{background:rgba(237,232,223,.12);color:var(--t2);border:1px solid var(--line2);font-family:'DM Mono',monospace;font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;padding:.65rem .85rem;border-radius:6px;cursor:pointer;transition:all 140ms;white-space:nowrap}
 .c-card-btn-change:hover{color:var(--rose);border-color:var(--roseB)}
 .c-card-changes-note{font-size:.55rem;color:var(--rose);background:var(--roseL);border-radius:3px;padding:.2rem .35rem;margin-bottom:.25rem;line-height:1.3}
 
 /* ── APPROVAL LIST ── */
 .c-section-lbl{font-family:'DM Mono',monospace;font-size:.56rem;letter-spacing:.2em;text-transform:uppercase;color:var(--t3);margin-bottom:.65rem;display:flex;align-items:center;gap:.55rem}
 .c-section-lbl::before{content:'';width:1rem;height:1px;background:var(--gold);display:block}
-.c-posts{display:grid;grid-template-columns:repeat(2,1fr);gap:4px;margin-bottom:1.75rem;background:var(--line2);border-radius:8px;overflow:hidden;min-height:0}
-.c-post-card{background:var(--bg2);border:none;border-radius:6px;display:flex;flex-direction:column;animation:cardIn 300ms var(--eo) both;transition:opacity 200ms;overflow:hidden;cursor:auto;border:1px solid var(--line2)}
+.c-posts{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:1.75rem}
+.c-post-card{background:var(--bg2);border:none;border-radius:8px;display:flex;flex-direction:column;animation:cardIn 300ms var(--eo) both;transition:opacity 200ms;overflow:visible;cursor:auto;border:1px solid var(--line2)}
 .c-post-card:hover{opacity:.85}
 .c-post-card.is-approved .c-card-overlay{background:rgba(74,222,128,.18);border:2px solid var(--green)}
 .c-post-card.is-changes .c-card-overlay{background:rgba(251,113,133,.15);border:2px solid var(--rose)}
@@ -910,7 +910,7 @@ t()">Crear cliente</button><button class="nc-cancel" onclick="closeNC()">Cancela
 
 <script>
 var FIREBASE_URL = "https://feed-manager-3b051-default-rtdb.europe-west1.firebasedatabase.app";
-var FIREBASE_PATH = "/feedmanager";
+var FIREBASE_PATH = "/fm_a9k2x7p4q8";
 var firebaseListener = null;
 var lastFirebaseTs = 0;
 var isSyncing = false;
@@ -2142,6 +2142,3 @@ async function saveStateAsync(){
 }
 
 
-</script>
-</body>
-</html>
