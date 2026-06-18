@@ -619,10 +619,6 @@ body.cc #cur-t{transform:translate(-50%,-50%) scale(.88)}
     <input class="finp" type="password" id="lPass" placeholder="Contraseña" onkeydown="if(event.key==='Enter')doLogin()">
     <button class="login-btn" onclick="doLogin()">Entrar →</button>
     <div class="login-err" id="loginErr">Usuario o contraseña incorrectos</div>
-    <div class="login-demo">
-      <div class="login-demo-label">Accesos demo</div>
-      <div class="login-demo-row">Admin: <b>admin</b> / <b>admin123</b></div>
-      <div class="login-demo-row">Sarai: <b>sarai</b> / <b>sarai2025</b></div>
     </div>
     <div class="login-reg-row">¿Nuevo cliente? <button class="login-reg-btn" onclick="openReg()">Crear cuenta →</button></div>
   </div>
@@ -1080,8 +1076,9 @@ var metaCreds={igId:'',token:'',imgbbKey:'',cloudinaryCloud:'',cloudinaryPreset:
 var pubLog=[];
 
 var clients={
-  sarai:{name:'Floristería Sarai',handle:'@floristeria_sarai',av:'S',pass:'sarai2025',email:'floristeriasarai@gmail.com',phone:'+34 933 79 75 04'},
-  barber:{name:'The Barber 080',handle:'@thebarber080',av:'B',pass:'barber2025',email:'thebarber080@gmail.com',phone:''},
+  sarai:{name:'Floristería Sarai',handle:'@floristeria_sarai',av:'S',pass:'Sr@2025!Cli',email:'floristeriasarai@gmail.com',phone:'+34 933 79 75 04'},
+  luvaflors:{name:'LuVaflors',handle:'@luvaflors',av:'L',pass:'Lv@2025!Cli',email:'',phone:''},
+  barber:{name:'The Barber 080',handle:'@thebarber080',av:'B',pass:'Br@2025!Cli',email:'',phone:''}
 };
 
 var IMGS=['https://images.unsplash.com/photo-1487530811015-780f83b3f8d2?w=400&q=80','https://images.unsplash.com/photo-1461354464878-ad92f492a5a0?w=400&q=80','https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&q=80','https://images.unsplash.com/photo-1490750967868-88df5691cc5e?w=400&q=80','https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=400&q=80','https://images.unsplash.com/photo-1549488344-cbb6c34a8132?w=400&q=80','https://images.unsplash.com/photo-1501004318641-b39e6451bec6?w=400&q=80','https://images.unsplash.com/photo-1561181286-d3f36b91d2ff?w=400&q=80','https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?w=400&q=80'];
@@ -1136,7 +1133,7 @@ function addLog(type,msg){pubLog.unshift({type:type,msg:msg,time:new Date().toLo
 
 // LOGIN
 function setRole(r,tab){loginRole=r;qsa('.rpill').forEach(function(p){p.classList.remove('on')});tab.classList.add('on')}
-function doLogin(){var u=qs('#lUser').value.trim().toLowerCase(),p=qs('#lPass').value;qs('#loginErr').style.display='none';if(loginRole==='admin'&&u==='admin'&&p==='admin123'){role='admin';showScr('sc-admin');renderAdmin();testApiAvailability();loadState(function(){renderAdmin()});return}for(var k in clients){if(u===k&&p===clients[k].pass){role='client';curClient=k;showScr('sc-client');loadState(function(){renderClient()});return}}qs('#loginErr').style.display='block'}
+function doLogin(){var u=qs('#lUser').value.trim().toLowerCase(),p=qs('#lPass').value;qs('#loginErr').style.display='none';if(loginRole==='admin'&&u==='admin'&&p==='Fm@2025!Adm'){role='admin';showScr('sc-admin');renderAdmin();testApiAvailability();loadState(function(){renderAdmin()});return}for(var k in clients){if(u===k&&p===clients[k].pass){role='client';curClient=k;showScr('sc-client');loadState(function(){renderClient()});return}}qs('#loginErr').style.display='block'}
 function logout(){role=null;qs('#lUser').value='';qs('#lPass').value='';showScr('sc-login')}
 function openReg(){qs('#regOverlay').classList.add('on')}
 function closeReg(){qs('#regOverlay').classList.remove('on')}
@@ -2150,4 +2147,4 @@ if(document.readyState==='loading'){
   initFirebase();
 }</script>
 </body>
-</html>
+</html
