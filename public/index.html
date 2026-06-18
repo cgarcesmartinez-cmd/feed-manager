@@ -671,8 +671,7 @@ body.cc #cur-t{transform:translate(-50%,-50%) scale(.88)}
       <div class="client-bar-label">Cliente activo</div>
       <div class="client-bar-sep"></div>
       <select class="client-select" id="clientSelect" onchange="switchClient()">
-        <option value="sarai">Floristería Sarai</option>
-        <option value="barber">The Barber 080</option>
+        
       </select>
       <button class="btn-gold-sm" onclick="openNC()">+ Nuevo cliente</button>
     </div>
@@ -1145,7 +1144,7 @@ function doRegister(){
   if(clients[user]){qs('#regErr').textContent='Ese usuario ya existe';qs('#regErr').style.display='block';return}
   clients[user]={name:negocio,handle:ig||('@'+user),av:negocio[0].toUpperCase(),pass:pass,email:email,phone:tel};
   posts[user]=[];PROFILES[user]={handle:(ig||('@'+user)).replace('@',''),name:negocio,cat:'Negocio',followers:0,following:0,posts:0,avatar:''};
-  var sel=qs('#clientSelect'),opt=document.createElement('option');opt.value=user;opt.textContent=negocio;sel.appendChild(opt);
+  populateClientSelect();
   addLog('ok','Nuevo cliente: '+negocio+' · '+email+(tel?' · '+tel:'')+(plan?' · '+plan:''));
   showToast('Cuenta creada 📧','success');
   closeReg();role='client';curClient=user;showScr('sc-client');renderClient();
@@ -1155,7 +1154,25 @@ function doRegister(){
 function aTab(name,btn){qsa('.nav-tab').forEach(function(b){b.classList.remove('on')});btn.classList.add('on');['queue','calendar','meta','analytics'].forEach(function(t){var el=qs('#tab-'+t);if(el)el.style.display=t===name?'block':'none'});if(name==='calendar')renderCalendar();if(name==='analytics')updateAnalytics()}
 function switchClient(){curClient=qs('#clientSelect').value;renderAdmin()}
 
+
+function populateClientSelect(){
+  var sel=qs('#clientSelect');
+  if(!sel)return;
+  var current=sel.value||curClient;
+  sel.innerHTML='';
+  Object.keys(clients).forEach(function(key){
+    var opt=document.createElement('option');
+    opt.value=key;
+    opt.textContent=clients[key].name||key;
+    sel.appendChild(opt);
+  });
+  // Restaurar selección actual si existe
+  if(current&&clients[current])sel.value=current;
+  else if(sel.options.length>0){sel.selectedIndex=0;curClient=sel.value;}
+}
+
 function renderAdmin(){
+  populateClientSelect();
   var ps=posts[curClient]||[];
   qs('#qMeta').textContent=ps.length+' posts';
   var grid=qs('#qGrid');
@@ -1520,7 +1537,7 @@ function createClient(){
   if(!name||!user||!pass||!email){showToast('Rellena los campos obligatorios','error');return}
   clients[user]={name:name,handle:handle||('@'+user),av:name[0].toUpperCase(),pass:pass,email:email,phone:phone};
   posts[user]=[];PROFILES[user]={handle:(handle||('@'+user)).replace('@',''),name:name,cat:'Negocio',followers:0,following:0,posts:0,avatar:''};
-  var sel=qs('#clientSelect'),opt=document.createElement('option');opt.value=user;opt.textContent=name;sel.appendChild(opt);sel.value=user;curClient=user;
+  curClient=user;populateClientSelect();qs('#clientSelect').value=user;
   closeNC();renderAdmin();addLog('ok','Cliente '+name+' creado · '+email+(phone?' · '+phone:''));showToast('Cliente '+name+' creado 📧','success');
 }
 
